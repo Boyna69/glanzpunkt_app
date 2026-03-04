@@ -1,0 +1,55 @@
+name: Release Gate
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-gate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  release-gate:
+    name: Flutter + Supabase Release Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      A_EMAIL: ${{ secrets.OPERATOR_EMAIL }}
+      A_PASSWORD: ${{ secrets.OPERATOR_PASSWORD }}
+      B_EMAIL: ${{ secrets.CUSTOMER_EMAIL }}
+      B_PASSWORD: ${{ secrets.CUSTOMER_PASSWORD }}
+      SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      RUN_SUPABASE_BOX_CYCLE: "0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate required secrets
+        shell: bash
+        run: |
+          missing=0
+          for var in A_EMAIL A_PASSWORD B_EMAIL B_PASSWORD SUPABASE_PUBLISHABLE_KEY; do
+            if [ -z "${!var}" ]; then
+              echo "::error::$var is missing. Configure repository secrets."
+              missing=1
+            fi
+          done
+          exit $missing
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.41.1"
+          channel: stable
+          cache: true
+
+      - name: Make scripts executable
+        shell: bash
+        run: chmod +x scripts/*.sh
+
+      - name: Run release gate
+        run: ${{ github.workspace }}/scripts/release_gate.sh

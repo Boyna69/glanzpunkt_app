@@ -1,0 +1,39 @@
+name: Supabase DB Parity Gate
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-db-parity-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  db-parity:
+    name: DB Schema/Grant/Trigger Drift Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    if: ${{ secrets.SUPABASE_DB_URL != '' }}
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Make scripts executable
+        shell: bash
+        run: chmod +x scripts/*.sh
+
+      - name: Run DB parity gate
+        run: ${{ github.workspace }}/scripts/supabase_db_parity_gate.sh
