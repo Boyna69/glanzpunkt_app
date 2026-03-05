@@ -18,22 +18,30 @@ jobs:
     name: DB Schema/Grant/Trigger Drift Gate
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    if: ${{ secrets.SUPABASE_DB_URL != '' }}
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Skip if secret is missing
+        if: ${{ env.SUPABASE_DB_URL == '' }}
+        shell: bash
+        run: |
+          echo "::warning::SUPABASE_DB_URL is missing. Skipping DB parity gate."
+
       - name: Install PostgreSQL client
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
       - name: Make scripts executable
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         shell: bash
         run: chmod +x scripts/*.sh
 
       - name: Run DB parity gate
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         run: ${{ github.workspace }}/scripts/supabase_db_parity_gate.sh
