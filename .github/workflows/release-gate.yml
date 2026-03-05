@@ -23,6 +23,7 @@ jobs:
       B_EMAIL: ${{ secrets.CUSTOMER_EMAIL }}
       B_PASSWORD: ${{ secrets.CUSTOMER_PASSWORD }}
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       RUN_SUPABASE_BOX_CYCLE: "0"
     steps:
       - name: Checkout
@@ -53,6 +54,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y zsh
           command -v zsh
+
+      - name: Validate Supabase publishable key
+        shell: bash
+        run: |
+          BASE="${SUPABASE_URL:-https://ucnvzrpcjkpaltuylvbv.supabase.co}"
+          KEY="$(echo -n "${SUPABASE_PUBLISHABLE_KEY}" | tr -d '\r\n')"
+          if [ -z "$KEY" ]; then
+            echo "::error::SUPABASE_PUBLISHABLE_KEY is empty."
+            exit 1
+          fi
+          STATUS="$(curl -sS -o /dev/null -w "%{http_code}" "$BASE/auth/v1/settings" -H "apikey: $KEY")"
+          if [ "$STATUS" != "200" ]; then
+            echo "::error::Supabase key preflight failed (HTTP $STATUS). Check SUPABASE_PUBLISHABLE_KEY and optional SUPABASE_URL secret."
+            exit 1
+          fi
 
       - name: Make scripts executable
         shell: bash
