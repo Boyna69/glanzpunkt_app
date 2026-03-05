@@ -24,23 +24,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate required secret
+      - name: Skip if secret is missing (free plan compatible)
+        if: ${{ env.SUPABASE_DB_URL == '' }}
         shell: bash
         run: |
-          if [ -z "${SUPABASE_DB_URL}" ]; then
-            echo "::error::SUPABASE_DB_URL is missing. Configure repository secret."
-            exit 1
-          fi
+          echo "::warning::SUPABASE_DB_URL is empty. Skipping DB parity gate."
+          echo "::warning::Use release-gate.yml (API-level checks) as required gate on free plan."
 
       - name: Install PostgreSQL client
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         shell: bash
         run: |
           sudo apt-get update
           sudo apt-get install -y postgresql-client
 
       - name: Make scripts executable
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         shell: bash
         run: chmod +x scripts/*.sh
 
       - name: Run DB parity gate
+        if: ${{ env.SUPABASE_DB_URL != '' }}
         run: ${{ github.workspace }}/scripts/supabase_db_parity_gate.sh

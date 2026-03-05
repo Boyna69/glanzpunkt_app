@@ -150,6 +150,7 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/supabase_db_parity_gate.sh`
   - requires: `SUPABASE_DB_URL`
   - Supabase source: `Project Settings -> Database -> Connection string -> URI`
+  - if `SUPABASE_DB_URL` is not available (e.g. free plan), the CI DB parity workflow is skipped and API-level `release_gate.sh` remains the required gate
 - CI workflows:
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/release-gate.yml`
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/supabase-db-parity.yml`
