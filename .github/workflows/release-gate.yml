@@ -75,4 +75,29 @@ jobs:
         run: chmod +x scripts/*.sh
 
       - name: Run release gate
-        run: ${{ github.workspace }}/scripts/release_gate.sh
+        shell: bash
+        run: |
+          clean_secret() {
+            local value="$1"
+            value="$(printf "%s" "$value" | tr -d '\r')"
+            if [[ "$value" == \"*\" && "$value" == *\" ]]; then
+              value="${value:1:${#value}-2}"
+            fi
+            if [[ "$value" == \'*\' && "$value" == *\' ]]; then
+              value="${value:1:${#value}-2}"
+            fi
+            printf "%s" "$value"
+          }
+
+          A_EMAIL_CLEAN="$(clean_secret "${A_EMAIL}")"
+          A_PASSWORD_CLEAN="$(clean_secret "${A_PASSWORD}")"
+          B_EMAIL_CLEAN="$(clean_secret "${B_EMAIL}")"
+          B_PASSWORD_CLEAN="$(clean_secret "${B_PASSWORD}")"
+          SUPABASE_KEY_CLEAN="$(clean_secret "${SUPABASE_PUBLISHABLE_KEY}")"
+
+          A_EMAIL="$A_EMAIL_CLEAN" \
+          A_PASSWORD="$A_PASSWORD_CLEAN" \
+          B_EMAIL="$B_EMAIL_CLEAN" \
+          B_PASSWORD="$B_PASSWORD_CLEAN" \
+          SUPABASE_PUBLISHABLE_KEY="$SUPABASE_KEY_CLEAN" \
+          "${{ github.workspace }}/scripts/release_gate.sh"
