@@ -149,6 +149,7 @@ samples, guidance on mobile development, and a full API reference.
 - DB parity hard gate (owner connection, fails on schema/grant/trigger drift):
   `scripts/supabase_db_parity_gate.sh`
   - requires: `SUPABASE_DB_URL`
+  - Supabase source: `Project Settings -> Database -> Connection string -> URI`
 - CI workflows:
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/release-gate.yml`
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/supabase-db-parity.yml`

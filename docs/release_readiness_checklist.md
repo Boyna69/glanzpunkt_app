@@ -119,3 +119,6 @@ Required GitHub Secrets:
 - `CUSTOMER_PASSWORD`
 - `SUPABASE_PUBLISHABLE_KEY`
 - `SUPABASE_DB_URL` (database owner/service-role connection string with SSL)
+  - Beispiel:
+    `postgresql://postgres:<DB_PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres?sslmode=require`
+  - Quelle: Supabase `Project Settings` -> `Database` -> `Connection string` -> `URI`
