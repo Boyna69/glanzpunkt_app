@@ -51,3 +51,19 @@ Ziel: finaler Check fuer Punkt "Rechtliches & Support" vor Store-Submission.
   `https://glanzpunkt-wahlstedt.de/impressum` -> final `404`
 
 Aktueller Stand: `FAIL` (Release-Blocker bis die Zielseiten live 200 liefern).
+
+## 7) Root-Cause Snapshot (2026-03-06)
+
+- Live-Pruefung zeigt weiter `404` fuer Datenschutz/Impressum.
+- `wp-json` Seitenliste liefert aktuell nur:
+  - `https://glanzpunkt-wahlstedt.de/` (Homepage)
+  - `https://glanzpunkt-wahlstedt.de/sample-page/`
+- Fazit: die rechtlichen Zielseiten sind sehr wahrscheinlich noch nicht angelegt
+  oder unter anderen Slugs veroeffentlicht.
+
+Konkrete To-dos im CMS:
+
+1. Seite mit Slug `datenschutz` erstellen/veroeffentlichen.
+2. Seite mit Slug `impressum` erstellen/veroeffentlichen.
+3. Danach Smoke-Check laufen lassen:
+   `RUN_LEGAL_SUPPORT_CHECK=1 /Users/fynn-olegottsch/glanzpunkt_app/scripts/release_smoke.sh`
