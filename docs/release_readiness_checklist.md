@@ -114,6 +114,7 @@ Latest gate evidence:
   `/Users/fynn-olegottsch/glanzpunkt_app/.githooks/pre-push`
   - install via `/Users/fynn-olegottsch/glanzpunkt_app/scripts/install_git_hooks.sh`
   - uses local ignored env file `.release-gate.env` (template: `.release-gate.env.example`)
+  - defaults for developer pushes: `RUN_SUPABASE_BOX_CYCLE=0`, `RUN_SUPABASE_QUICK_FLOW_CHECK=0`
 
 Required GitHub Secrets:
 

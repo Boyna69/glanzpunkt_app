@@ -25,10 +25,17 @@ if [ "${RUN_SUPABASE_SMOKE:-0}" = "1" ]; then
   A_EMAIL="$A_EMAIL" A_PASSWORD="$A_PASSWORD" B_EMAIL="$B_EMAIL" B_PASSWORD="$B_PASSWORD" SUPABASE_ANON_KEY="$SUPABASE_API_KEY" \
     "$ROOT/scripts/supabase_ab_isolation_login_only.sh"
 
-  echo "== Supabase quick RPC flow check =="
-  WAIT="${SUPABASE_WAIT_SECONDS:-130}"
-  A_EMAIL="$A_EMAIL" A_PASSWORD="$A_PASSWORD" SUPABASE_ANON_KEY="$SUPABASE_API_KEY" BOX_ID="1" AMOUNT="1" WAIT_SECONDS="$WAIT" \
-    "$ROOT/scripts/supabase_activate_countdown_e2e.sh"
+  if [ "${RUN_SUPABASE_QUICK_FLOW_CHECK:-1}" = "1" ]; then
+    echo "== Supabase quick RPC flow check =="
+    WAIT="${SUPABASE_WAIT_SECONDS:-130}"
+    QUICK_BOX_ID="${SUPABASE_QUICK_FLOW_BOX_ID:-1}"
+    QUICK_AMOUNT="${SUPABASE_QUICK_FLOW_AMOUNT:-1}"
+    A_EMAIL="$A_EMAIL" A_PASSWORD="$A_PASSWORD" SUPABASE_ANON_KEY="$SUPABASE_API_KEY" \
+      BOX_ID="$QUICK_BOX_ID" AMOUNT="$QUICK_AMOUNT" WAIT_SECONDS="$WAIT" \
+      "$ROOT/scripts/supabase_activate_countdown_e2e.sh"
+  else
+    echo "== Supabase quick RPC flow check skipped (RUN_SUPABASE_QUICK_FLOW_CHECK=0) =="
+  fi
 
   if [ "${RUN_SUPABASE_SECURITY_SUITE:-1}" = "1" ]; then
     if [ "${RUN_SUPABASE_CONTRACT_CHECK:-1}" = "1" ]; then
