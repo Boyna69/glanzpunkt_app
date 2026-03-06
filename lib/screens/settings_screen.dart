@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../core/app_config.dart';
 import '../services/analytics_service.dart';
@@ -118,6 +120,59 @@ class SettingsScreen extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+
+  Future<void> _copyToClipboard(BuildContext context, String value) async {
+    await Clipboard.setData(ClipboardData(text: value));
+    if (!context.mounted) {
+      return;
+    }
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('In Zwischenablage kopiert.')));
+  }
+
+  Future<void> _showLaunchFallbackDialog(
+    BuildContext context, {
+    required String title,
+    required String value,
+  }) async {
+    await showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(title),
+        content: SelectableText(value),
+        actions: [
+          TextButton(
+            onPressed: () async {
+              await _copyToClipboard(context, value);
+            },
+            child: const Text('Kopieren'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Schliessen'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _openExternalUri(
+    BuildContext context, {
+    required Uri uri,
+    required String fallbackTitle,
+    required String fallbackValue,
+  }) async {
+    final opened = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (opened || !context.mounted) {
+      return;
+    }
+    await _showLaunchFallbackDialog(
+      context,
+      title: fallbackTitle,
+      value: fallbackValue,
     );
   }
 
@@ -289,11 +344,23 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.privacy_tip_outlined),
               title: const Text('Datenschutz'),
               subtitle: Text(AppConfig.legalPrivacyUrl),
-              onTap: () => _showInfoDialog(
-                context,
-                title: 'Datenschutz',
-                message: 'Datenschutzhinweise:\n${AppConfig.legalPrivacyUrl}',
-              ),
+              onTap: () async {
+                final uri = Uri.tryParse(AppConfig.legalPrivacyUrl);
+                if (uri == null) {
+                  await _showLaunchFallbackDialog(
+                    context,
+                    title: 'Datenschutz',
+                    value: AppConfig.legalPrivacyUrl,
+                  );
+                  return;
+                }
+                await _openExternalUri(
+                  context,
+                  uri: uri,
+                  fallbackTitle: 'Datenschutz',
+                  fallbackValue: AppConfig.legalPrivacyUrl,
+                );
+              },
             ),
           ),
           Card(
@@ -301,11 +368,23 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.description_outlined),
               title: const Text('Impressum'),
               subtitle: Text(AppConfig.legalImprintUrl),
-              onTap: () => _showInfoDialog(
-                context,
-                title: 'Impressum',
-                message: 'Impressum:\n${AppConfig.legalImprintUrl}',
-              ),
+              onTap: () async {
+                final uri = Uri.tryParse(AppConfig.legalImprintUrl);
+                if (uri == null) {
+                  await _showLaunchFallbackDialog(
+                    context,
+                    title: 'Impressum',
+                    value: AppConfig.legalImprintUrl,
+                  );
+                  return;
+                }
+                await _openExternalUri(
+                  context,
+                  uri: uri,
+                  fallbackTitle: 'Impressum',
+                  fallbackValue: AppConfig.legalImprintUrl,
+                );
+              },
             ),
           ),
           Card(
@@ -313,11 +392,19 @@ class SettingsScreen extends StatelessWidget {
               leading: const Icon(Icons.support_agent_outlined),
               title: const Text('Support'),
               subtitle: Text(AppConfig.supportEmail),
-              onTap: () => _showInfoDialog(
-                context,
-                title: 'Support',
-                message: 'Kontakt:\n${AppConfig.supportEmail}',
-              ),
+              onTap: () async {
+                final uri = Uri(
+                  scheme: 'mailto',
+                  path: AppConfig.supportEmail,
+                  queryParameters: const {'subject': 'Glanzpunkt Support'},
+                );
+                await _openExternalUri(
+                  context,
+                  uri: uri,
+                  fallbackTitle: 'Support',
+                  fallbackValue: AppConfig.supportEmail,
+                );
+              },
             ),
           ),
         ],
