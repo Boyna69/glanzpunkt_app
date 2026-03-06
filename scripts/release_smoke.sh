@@ -114,4 +114,14 @@ if [ "${RUN_SUPABASE_SMOKE:-0}" = "1" ]; then
   fi
 fi
 
+if [ "${RUN_LEGAL_SUPPORT_CHECK:-0}" = "1" ]; then
+  echo "== Legal/support live check =="
+  LEGAL_PRIVACY_URL="${LEGAL_PRIVACY_URL:-}" \
+  LEGAL_IMPRINT_URL="${LEGAL_IMPRINT_URL:-}" \
+  SUPPORT_EMAIL="${SUPPORT_EMAIL:-}" \
+  "$ROOT/scripts/legal_support_check.sh"
+else
+  echo "== Legal/support live check skipped (RUN_LEGAL_SUPPORT_CHECK=0) =="
+fi
+
 echo "SMOKE CHECKS PASSED"

@@ -7,9 +7,15 @@ cd "$ROOT"
 SKIP_PRECHECKS="${SKIP_PRECHECKS:-0}"
 RUN_CLEAN="${RUN_CLEAN:-0}"
 USE_MOCK_BACKEND_VALUE="${USE_MOCK_BACKEND_VALUE:-false}"
+CUSTOMER_TOP_UP_ENABLED_VALUE="${CUSTOMER_TOP_UP_ENABLED:-}"
 
 if [ "$USE_MOCK_BACKEND_VALUE" != "false" ]; then
   echo "FAILED: release build requires USE_MOCK_BACKEND=false"
+  exit 2
+fi
+
+if [ -n "$CUSTOMER_TOP_UP_ENABLED_VALUE" ] && [ "$CUSTOMER_TOP_UP_ENABLED_VALUE" != "true" ] && [ "$CUSTOMER_TOP_UP_ENABLED_VALUE" != "false" ]; then
+  echo "FAILED: CUSTOMER_TOP_UP_ENABLED must be true or false when provided."
   exit 2
 fi
 
@@ -58,6 +64,9 @@ if [ -n "${LEGAL_IMPRINT_URL:-}" ]; then
 fi
 if [ -n "${SUPPORT_EMAIL:-}" ]; then
   BUILD_ARGS+=(--dart-define="SUPPORT_EMAIL=$SUPPORT_EMAIL")
+fi
+if [ -n "$CUSTOMER_TOP_UP_ENABLED_VALUE" ]; then
+  BUILD_ARGS+=(--dart-define="CUSTOMER_TOP_UP_ENABLED=$CUSTOMER_TOP_UP_ENABLED_VALUE")
 fi
 
 echo "== flutter ${BUILD_ARGS[*]} =="

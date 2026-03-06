@@ -79,6 +79,8 @@ Prepared templates:
 
 Current blocker notes:
 
+- 2026-03-06: `scripts/legal_support_check.sh` fail (Datenschutz/Impressum final
+  HTTP `404`).
 - 2026-03-04: Legal URLs currently fail live HTTP check (final `404` for
   Datenschutz/Impressum), see `docs/legal_support_review.md`.
 
@@ -104,6 +106,7 @@ Latest gate evidence:
 
 - [x] GitHub Actions workflow for release smoke gate exists:
   `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/release-gate.yml`
+  - optional manual input: `run_legal_support_check=true` fuer Live-URL-Check
 - [x] GitHub Actions workflow for DB drift/parity exists:
   `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/supabase-db-parity.yml`
 - [x] DB parity hard-fail SQL gate exists:

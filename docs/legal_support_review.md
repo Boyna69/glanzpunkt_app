@@ -35,6 +35,7 @@ Ziel: finaler Check fuer Punkt "Rechtliches & Support" vor Store-Submission.
 - Optional Log:
   - Terminal: `curl -I https://www.glanzpunkt-wahlstedt.de/datenschutz`
   - Terminal: `curl -I https://www.glanzpunkt-wahlstedt.de/impressum`
+  - Script: `RUN_LEGAL_SUPPORT_CHECK=1 /Users/fynn-olegottsch/glanzpunkt_app/scripts/release_smoke.sh`
 
 ## 5) Sign-off
 
@@ -42,7 +43,7 @@ Ziel: finaler Check fuer Punkt "Rechtliches & Support" vor Store-Submission.
 - Datum:
 - Ergebnis: `PASS` / `FAIL`
 
-## 6) Letzte Live-Pruefung (2026-03-04)
+## 6) Letzte Live-Pruefung (2026-03-06)
 
 - `https://www.glanzpunkt-wahlstedt.de/datenschutz` -> Redirect auf
   `https://glanzpunkt-wahlstedt.de/datenschutz` -> final `404`

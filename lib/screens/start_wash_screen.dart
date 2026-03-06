@@ -675,7 +675,7 @@ class _StartWashScreenState extends State<StartWashScreen> {
 
     switch (error.code) {
       case BackendErrorCode.insufficientBalance:
-        if (authService.hasAccount) {
+        if (authService.canTopUpBalance) {
           final topUpAmount = _selectedAmount ?? 5;
           return _InlineErrorAction(
             label: '+ $topUpAmount EUR aufladen',
@@ -853,7 +853,7 @@ class _StartWashScreenState extends State<StartWashScreen> {
         !_useRewardSlot &&
         _selectedAmount != null &&
         _selectedAmount! > accountBalance;
-    final canManualTopUp = authService.hasAccount;
+    final canManualTopUp = authService.canTopUpBalance;
     final isSelectionMissing =
         _selectedBoxNumber == null ||
         (!_useRewardSlot && _selectedAmount == null);
@@ -935,6 +935,9 @@ class _StartWashScreenState extends State<StartWashScreen> {
                     Text(
                       canManualTopUp
                           ? 'Schnell aufladen (Testmodus)'
+                          : authService.hasAccount &&
+                                authService.isCustomerAccount
+                          ? 'Kunden-Aufladung ist aktuell deaktiviert.'
                           : 'Nur mit Konto verfuegbar.',
                       style: const TextStyle(color: Colors.white70),
                     ),

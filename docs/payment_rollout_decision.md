@@ -6,6 +6,9 @@ Stand: 2026-03-01
 
 - `top_up` ist aktuell fuer `authenticated` geoeffnet (Testmodus).
 - Customer kann damit derzeit direkt Guthaben aufladen.
+- App-seitig kann Kunden-Aufladung jetzt ueber
+  `--dart-define=CUSTOMER_TOP_UP_ENABLED=false` deaktiviert werden
+  (Operator/Owner bleiben weiterhin freigeschaltet).
 - Vor Store-Release braucht es eine finale Entscheidung, ob das so bleibt.
 
 ## Decision Options

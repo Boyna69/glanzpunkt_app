@@ -52,6 +52,11 @@ class AppConfig {
     defaultValue: 'support@glanzpunkt-wahlstedt.de',
   );
 
+  static const bool customerTopUpEnabled = bool.fromEnvironment(
+    'CUSTOMER_TOP_UP_ENABLED',
+    defaultValue: true,
+  );
+
   static String get supabaseApiKey {
     if (supabasePublishableKey.isNotEmpty) {
       return supabasePublishableKey;

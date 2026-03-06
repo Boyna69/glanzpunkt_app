@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../core/app_config.dart';
 import 'backend_http_client.dart';
 
 enum AccountRole { customer, operator, owner }
@@ -51,6 +52,9 @@ class AuthService extends ChangeNotifier {
   String? get profileEmail => _profileEmail;
   double get profileBalanceEuro => _profileBalanceEuro;
   AccountRole get profileRole => _profileRole;
+  bool get isCustomerAccount => _profileRole == AccountRole.customer;
+  bool get canTopUpBalance =>
+      hasAccount && (!isCustomerAccount || AppConfig.customerTopUpEnabled);
   bool get hasOperatorAccess =>
       _profileRole == AccountRole.operator || _profileRole == AccountRole.owner;
   Future<void> get ready => _readyCompleter.future;
@@ -153,6 +157,9 @@ class AuthService extends ChangeNotifier {
     }
     if (!_loggedIn || _isGuest) {
       throw const AuthException('Aufladen nur mit Konto moeglich.');
+    }
+    if (!canTopUpBalance) {
+      throw const AuthException('Kunden-Aufladung ist aktuell deaktiviert.');
     }
     final jwt = _backendJwt;
     if (jwt == null || jwt.isEmpty) {

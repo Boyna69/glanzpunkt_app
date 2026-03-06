@@ -122,6 +122,8 @@ samples, guidance on mobile development, and a full API reference.
     `SUPABASE_WAIT_SECONDS=130`
   - optional full 1-6 box cycle:
     `RUN_SUPABASE_BOX_CYCLE=1`
+  - optional legal/support live check:
+    `RUN_LEGAL_SUPPORT_CHECK=1`
 - One-command release gate (analyze + tests + Supabase security + cleaning + operator KPI export + box cycle):
   `scripts/release_gate.sh`
   - example:
@@ -186,3 +188,5 @@ samples, guidance on mobile development, and a full API reference.
   - `supabase/harden_wash_sessions_legacy_backup.sql`
 - Android release build helper (forces `USE_MOCK_BACKEND=false`):
   - `scripts/build_android_release.sh`
+  - optional customer top-up toggle for release builds:
+    `CUSTOMER_TOP_UP_ENABLED=false scripts/build_android_release.sh`

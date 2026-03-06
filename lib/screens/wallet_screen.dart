@@ -156,6 +156,7 @@ class _WalletScreenState extends State<WalletScreen> {
     final auth = context.watch<AuthService>();
     final wallet = context.watch<WalletService>();
     final boxService = context.watch<BoxService>();
+    final canTopUp = auth.canTopUpBalance;
 
     if (!auth.hasAccount) {
       return Scaffold(
@@ -229,23 +230,29 @@ class _WalletScreenState extends State<WalletScreen> {
                     ),
                   ),
                   const SizedBox(height: 10),
-                  const Text(
-                    'Schnell aufladen (Testmodus)',
-                    style: TextStyle(color: Colors.white70),
+                  Text(
+                    canTopUp
+                        ? 'Schnell aufladen (Testmodus)'
+                        : auth.isCustomerAccount
+                        ? 'Kunden-Aufladung ist aktuell deaktiviert.'
+                        : 'Aufladen aktuell nicht verfuegbar.',
+                    style: const TextStyle(color: Colors.white70),
                   ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [5, 10, 20].map((amount) {
-                      return OutlinedButton(
-                        onPressed: _isToppingUp || _isRefreshing
-                            ? null
-                            : () => _topUp(amount),
-                        child: Text('+ $amount EUR'),
-                      );
-                    }).toList(),
-                  ),
+                  if (canTopUp) ...[
+                    const SizedBox(height: 8),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 8,
+                      children: [5, 10, 20].map((amount) {
+                        return OutlinedButton(
+                          onPressed: _isToppingUp || _isRefreshing
+                              ? null
+                              : () => _topUp(amount),
+                          child: Text('+ $amount EUR'),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                   if (_isToppingUp)
                     const Padding(
                       padding: EdgeInsets.only(top: 8),
