@@ -110,6 +110,10 @@ Latest gate evidence:
   `/Users/fynn-olegottsch/glanzpunkt_app/supabase/migration_parity_gate.sql`
 - [x] DB parity runner script exists:
   `/Users/fynn-olegottsch/glanzpunkt_app/scripts/supabase_db_parity_gate.sh`
+- [x] local git pre-push gate exists (main branch protection fallback):
+  `/Users/fynn-olegottsch/glanzpunkt_app/.githooks/pre-push`
+  - install via `/Users/fynn-olegottsch/glanzpunkt_app/scripts/install_git_hooks.sh`
+  - uses local ignored env file `.release-gate.env` (template: `.release-gate.env.example`)
 
 Required GitHub Secrets:
 

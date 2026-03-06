@@ -1,0 +1,85 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+ZERO_SHA="0000000000000000000000000000000000000000"
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+GIT_DIR="$(git rev-parse --git-dir)"
+STAMP_FILE="${GIT_DIR}/release_gate_last_pass_main"
+
+cd "$REPO_ROOT"
+
+# Optional local env file for push-gate credentials (never commit real values).
+if [ -f "${REPO_ROOT}/.release-gate.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "${REPO_ROOT}/.release-gate.env"
+  set +a
+fi
+
+target_main=0
+target_sha=""
+
+while read -r local_ref local_sha remote_ref remote_sha; do
+  if [ "${remote_ref}" != "refs/heads/main" ]; then
+    continue
+  fi
+
+  target_main=1
+  target_sha="${local_sha}"
+
+  if [ "${local_sha}" = "${ZERO_SHA}" ]; then
+    echo "[pre-push] Push blocked: deleting main is not allowed."
+    exit 1
+  fi
+done
+
+# Only guard pushes that touch origin/main.
+if [ "${target_main}" -ne 1 ]; then
+  exit 0
+fi
+
+if [ "${SKIP_RELEASE_GATE:-0}" = "1" ]; then
+  echo "[pre-push] WARNING: bypassing release gate (SKIP_RELEASE_GATE=1)."
+  exit 0
+fi
+
+if [ -f "${STAMP_FILE}" ] && [ "$(cat "${STAMP_FILE}")" = "${target_sha}" ]; then
+  echo "[pre-push] release_gate already passed for commit ${target_sha}."
+  exit 0
+fi
+
+missing=0
+for var in A_EMAIL A_PASSWORD B_EMAIL B_PASSWORD; do
+  if [ -z "${!var:-}" ]; then
+    echo "[pre-push] Missing required env: ${var}"
+    missing=1
+  fi
+done
+
+if [ -z "${SUPABASE_PUBLISHABLE_KEY:-}" ] && [ -z "${SUPABASE_ANON_KEY:-}" ]; then
+  echo "[pre-push] Missing required env: SUPABASE_PUBLISHABLE_KEY (or SUPABASE_ANON_KEY)"
+  missing=1
+fi
+
+if [ "${missing}" -ne 0 ]; then
+  cat <<'EOF'
+[pre-push] Push blocked: release gate credentials are not configured.
+[pre-push] Configure env vars in your shell or create .release-gate.env from .release-gate.env.example.
+[pre-push] Temporary bypass (not recommended): SKIP_RELEASE_GATE=1 git push
+EOF
+  exit 1
+fi
+
+echo "[pre-push] Running release gate for push to main..."
+RUN_SUPABASE_BOX_CYCLE="${RUN_SUPABASE_BOX_CYCLE:-0}" \
+A_EMAIL="${A_EMAIL}" \
+A_PASSWORD="${A_PASSWORD}" \
+B_EMAIL="${B_EMAIL}" \
+B_PASSWORD="${B_PASSWORD}" \
+SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
+SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-}" \
+SUPABASE_URL="${SUPABASE_URL:-}" \
+zsh "${REPO_ROOT}/scripts/release_gate.sh"
+
+echo "${target_sha}" > "${STAMP_FILE}"
+echo "[pre-push] release_gate passed; continuing push to main."
