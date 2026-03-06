@@ -76,6 +76,7 @@ Prepared templates:
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/legal_support_review.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/payment_rollout_decision.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_template.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_release_draft_de.md`
 
 Current blocker notes:
 
