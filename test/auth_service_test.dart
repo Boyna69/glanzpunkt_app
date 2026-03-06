@@ -102,6 +102,44 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test(
+    'top-up policy helper enforces customer flag and keeps operator access',
+    () {
+      expect(
+        AuthService.isTopUpAllowedForContext(
+          hasAccount: false,
+          role: AccountRole.customer,
+          customerTopUpEnabled: true,
+        ),
+        isFalse,
+      );
+      expect(
+        AuthService.isTopUpAllowedForContext(
+          hasAccount: true,
+          role: AccountRole.customer,
+          customerTopUpEnabled: false,
+        ),
+        isFalse,
+      );
+      expect(
+        AuthService.isTopUpAllowedForContext(
+          hasAccount: true,
+          role: AccountRole.operator,
+          customerTopUpEnabled: false,
+        ),
+        isTrue,
+      );
+      expect(
+        AuthService.isTopUpAllowedForContext(
+          hasAccount: true,
+          role: AccountRole.owner,
+          customerTopUpEnabled: false,
+        ),
+        isTrue,
+      );
+    },
+  );
+
   test('loginAsGuest sets guest state and displayName', () async {
     final auth = AuthService();
     await auth.ready;

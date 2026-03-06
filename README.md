@@ -159,6 +159,8 @@ samples, guidance on mobile development, and a full API reference.
   - required repository secrets:
     `OPERATOR_EMAIL`, `OPERATOR_PASSWORD`, `CUSTOMER_EMAIL`, `CUSTOMER_PASSWORD`,
     `SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_DB_URL`
+  - optional repository variables for legal/support live check:
+    `LEGAL_PRIVACY_URL`, `LEGAL_IMPRINT_URL`, `SUPPORT_EMAIL`
 - Local push protection for `main` (free-plan replacement for branch protection):
   - install once: `scripts/install_git_hooks.sh`
   - credentials file template: `.release-gate.env.example`

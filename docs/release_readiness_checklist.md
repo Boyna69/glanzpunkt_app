@@ -131,3 +131,9 @@ Required GitHub Secrets:
     `postgresql://postgres:<DB_PASSWORD>@db.<PROJECT_REF>.supabase.co:5432/postgres?sslmode=require`
   - Quelle: Supabase `Project Settings` -> `Database` -> `Connection string` -> `URI`
   - Hinweis: auf Free-Plan kann Direct-DB-Zugriff eingeschraenkt sein; dann bleibt dieser Gate optional und `release-gate.yml` ist der verpflichtende Sicherheits-Gate.
+
+Optional GitHub Variables (for legal/support check):
+
+- `LEGAL_PRIVACY_URL`
+- `LEGAL_IMPRINT_URL`
+- `SUPPORT_EMAIL`

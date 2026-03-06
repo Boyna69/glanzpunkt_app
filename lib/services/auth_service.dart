@@ -54,12 +54,26 @@ class AuthService extends ChangeNotifier {
   AccountRole get profileRole => _profileRole;
   bool get isCustomerAccount => _profileRole == AccountRole.customer;
   bool get canTopUpBalance =>
-      hasAccount && (!isCustomerAccount || AppConfig.customerTopUpEnabled);
+      isTopUpAllowedForContext(hasAccount: hasAccount, role: _profileRole);
   bool get hasOperatorAccess =>
       _profileRole == AccountRole.operator || _profileRole == AccountRole.owner;
   Future<void> get ready => _readyCompleter.future;
   bool get _hasSupabaseConfig =>
       _supabaseUrlProvider().isNotEmpty && _supabaseApiKeyProvider().isNotEmpty;
+
+  static bool isTopUpAllowedForContext({
+    required bool hasAccount,
+    required AccountRole role,
+    bool? customerTopUpEnabled,
+  }) {
+    if (!hasAccount) {
+      return false;
+    }
+    if (role == AccountRole.customer) {
+      return customerTopUpEnabled ?? AppConfig.customerTopUpEnabled;
+    }
+    return true;
+  }
 
   AuthService({
     BackendHttpClient? httpClient,
