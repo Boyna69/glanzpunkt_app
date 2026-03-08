@@ -68,6 +68,33 @@ class SettingsScreen extends StatelessWidget {
         '${_buildBackendDiagnostics(auth, env)}';
   }
 
+  String _buildSupportMailBody(AuthService auth, EnvironmentService env) {
+    final role = _labelForRole(auth.profileRole);
+    return 'Hallo Glanzpunkt Support,\n\n'
+        'ich moechte einen Fehler melden.\n\n'
+        'Was ist passiert?\n'
+        '- ...\n\n'
+        'Erwartetes Verhalten:\n'
+        '- ...\n\n'
+        'Schritte zur Reproduktion:\n'
+        '1. ...\n'
+        '2. ...\n'
+        '3. ...\n\n'
+        'Konto-Typ: $role\n\n'
+        '${_buildDiagnosticsReport(auth, env)}\n';
+  }
+
+  Uri _buildSupportMailUri(AuthService auth, EnvironmentService env) {
+    return Uri(
+      scheme: 'mailto',
+      path: AppConfig.supportEmail,
+      queryParameters: {
+        'subject': 'Glanzpunkt App - Fehlerbericht',
+        'body': _buildSupportMailBody(auth, env),
+      },
+    );
+  }
+
   Future<void> _confirmAndDeleteAccount(BuildContext context) async {
     final authService = context.read<AuthService>();
     final shouldDelete = await showDialog<bool>(
@@ -196,6 +223,7 @@ class SettingsScreen extends StatelessWidget {
     final env = context.watch<EnvironmentService>();
     final analytics = context.watch<AnalyticsService>();
     final recentAnalytics = analytics.recentEvents(limit: 8);
+    final supportIssueUri = _buildSupportMailUri(auth, env);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Einstellungen')),
@@ -418,6 +446,23 @@ class SettingsScreen extends StatelessWidget {
                   uri: uri,
                   fallbackTitle: 'Impressum',
                   fallbackValue: AppConfig.legalImprintUrl,
+                );
+              },
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.bug_report_outlined),
+              title: const Text('Fehler melden'),
+              subtitle: const Text(
+                'E-Mail mit Fehlerbeschreibung und Diagnosebericht',
+              ),
+              onTap: () async {
+                await _openExternalUri(
+                  context,
+                  uri: supportIssueUri,
+                  fallbackTitle: 'Fehler melden',
+                  fallbackValue: _buildSupportMailBody(auth, env),
                 );
               },
             ),
