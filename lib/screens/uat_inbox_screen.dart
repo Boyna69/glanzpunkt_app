@@ -1,5 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
+
+import '../core/app_config.dart';
+import '../services/auth_service.dart';
+import '../services/backend_http_client.dart';
+import '../services/environment_service.dart';
+import '../services/ops_maintenance_service.dart';
 
 enum UatInboxStatus { open, inProgress, fixed, retest, closed }
 
@@ -13,6 +20,7 @@ class UatInboxItem {
   final UatInboxStatus status;
   final String owner;
   final String targetBuild;
+  final DateTime createdAt;
 
   const UatInboxItem({
     required this.id,
@@ -22,51 +30,242 @@ class UatInboxItem {
     required this.status,
     required this.owner,
     required this.targetBuild,
+    required this.createdAt,
   });
 }
 
-class UatInboxScreen extends StatelessWidget {
+class UatInboxScreen extends StatefulWidget {
   const UatInboxScreen({super.key});
 
-  static const List<UatInboxItem> _items = <UatInboxItem>[
-    UatInboxItem(
-      id: 'UAT-001',
-      severity: UatInboxSeverity.high,
-      area: 'Feedback Intake',
-      summary: 'Externe Tester-Rueckmeldungen einsammeln und priorisieren.',
-      status: UatInboxStatus.inProgress,
-      owner: 'Product',
-      targetBuild: '1.0.2+3',
-    ),
-    UatInboxItem(
-      id: 'UAT-002',
-      severity: UatInboxSeverity.medium,
-      area: 'Customer Flow',
-      summary:
-          'Gemeldete Zahlungs-/TopUp-Fehler in den Triage-Board aufnehmen.',
-      status: UatInboxStatus.open,
-      owner: 'Dev',
-      targetBuild: 'next',
-    ),
-    UatInboxItem(
-      id: 'UAT-003',
-      severity: UatInboxSeverity.medium,
-      area: 'Operator Flow',
-      summary: 'Betreiber-Regressionen nach Fix gesammelt retesten.',
-      status: UatInboxStatus.open,
-      owner: 'QA',
-      targetBuild: 'next',
-    ),
-    UatInboxItem(
-      id: 'UAT-004',
-      severity: UatInboxSeverity.low,
-      area: 'Release Prep',
-      summary: 'Finalen Smoke-Run fuer Customer/Operator vor RC ausfuehren.',
-      status: UatInboxStatus.open,
-      owner: 'QA',
-      targetBuild: 'next',
-    ),
-  ];
+  @override
+  State<UatInboxScreen> createState() => _UatInboxScreenState();
+}
+
+class _UatInboxScreenState extends State<UatInboxScreen> {
+  late final OpsMaintenanceService _opsMaintenance;
+  bool _isLoading = false;
+  bool _usingFallbackFeed = false;
+  String? _warning;
+  List<UatInboxItem> _items = const <UatInboxItem>[];
+
+  @override
+  void initState() {
+    super.initState();
+    final apiKey = AppConfig.supabaseApiKey;
+    final client = createBackendHttpClient(
+      defaultHeaders: <String, String>{
+        if (apiKey.isNotEmpty) ...{
+          'apikey': apiKey,
+          'Authorization': 'Bearer $apiKey',
+        },
+        'x-client-info': 'glanzpunkt_app/1.0',
+      },
+    );
+    _opsMaintenance = OpsMaintenanceService(httpClient: client);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reloadInbox();
+    });
+  }
+
+  Future<void> _reloadInbox() async {
+    if (!mounted) {
+      return;
+    }
+    final auth = context.read<AuthService>();
+    final jwt = auth.backendJwt;
+    if (!auth.hasOperatorAccess || jwt == null || jwt.isEmpty) {
+      setState(() {
+        _isLoading = false;
+        _usingFallbackFeed = false;
+        _items = const <UatInboxItem>[];
+        _warning = 'UAT Inbox ist nur mit Betreiber-Session verfuegbar.';
+      });
+      return;
+    }
+
+    final baseUrl = context.read<EnvironmentService>().activeBaseUrl;
+    setState(() {
+      _isLoading = true;
+      _warning = null;
+    });
+
+    try {
+      var rows = await _opsMaintenance.fetchOperatorActions(
+        baseUrl: baseUrl,
+        jwt: jwt,
+        maxRows: 40,
+        searchQuery: 'uat',
+      );
+      var usingFallback = false;
+      if (rows.isEmpty) {
+        rows = await _opsMaintenance.fetchOperatorActions(
+          baseUrl: baseUrl,
+          jwt: jwt,
+          maxRows: 40,
+        );
+        usingFallback = true;
+      }
+
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _items = rows.map(_mapFromOperatorAction).toList();
+        _usingFallbackFeed = usingFallback;
+        _warning = null;
+      });
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _items = const <UatInboxItem>[];
+        _usingFallbackFeed = false;
+        _warning = 'UAT Inbox konnte nicht geladen werden. ($e)';
+      });
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  UatInboxItem _mapFromOperatorAction(OpsOperatorActionItem action) {
+    final details = action.details;
+    final statusFromDetails = _firstText(details, <String>[
+      'uat_status',
+      'status',
+    ]);
+    final severityFromDetails = _firstText(details, <String>[
+      'severity',
+      'priority',
+    ]);
+    final targetBuild =
+        _firstText(details, <String>['target_build', 'build', 'release']) ??
+        '-';
+
+    final summary =
+        _firstText(details, <String>[
+          'summary',
+          'title',
+          'note',
+          'message',
+          'description',
+        ]) ??
+        '${_humanize(action.actionName)} (${action.actionStatus})';
+
+    final area =
+        _firstText(details, <String>['area', 'module']) ??
+        (action.boxId != null
+            ? 'Box ${action.boxId}'
+            : _humanize(action.actionName));
+
+    final owner = (action.actorEmail?.trim().isNotEmpty ?? false)
+        ? action.actorEmail!.trim()
+        : action.actorId;
+
+    return UatInboxItem(
+      id: 'LOG-${action.id}',
+      severity: _mapSeverity(
+        status: action.actionStatus,
+        severity: severityFromDetails,
+      ),
+      area: area,
+      summary: summary,
+      status: _mapStatus(statusFromDetails, action.actionStatus),
+      owner: owner,
+      targetBuild: targetBuild,
+      createdAt: action.createdAt,
+    );
+  }
+
+  UatInboxStatus _mapStatus(String? rawStatus, String actionStatus) {
+    final normalized = _normalize(rawStatus);
+    switch (normalized) {
+      case 'open':
+        return UatInboxStatus.open;
+      case 'in_progress':
+      case 'inprogress':
+        return UatInboxStatus.inProgress;
+      case 'fixed':
+        return UatInboxStatus.fixed;
+      case 'retest':
+        return UatInboxStatus.retest;
+      case 'closed':
+        return UatInboxStatus.closed;
+    }
+
+    final normalizedActionStatus = _normalize(actionStatus);
+    if (normalizedActionStatus == 'success') {
+      return UatInboxStatus.closed;
+    }
+    if (normalizedActionStatus == 'partial' ||
+        normalizedActionStatus == 'warning') {
+      return UatInboxStatus.inProgress;
+    }
+    return UatInboxStatus.open;
+  }
+
+  UatInboxSeverity _mapSeverity({
+    required String status,
+    required String? severity,
+  }) {
+    final normalized = _normalize(severity);
+    switch (normalized) {
+      case 'critical':
+      case 'p0':
+        return UatInboxSeverity.critical;
+      case 'high':
+      case 'p1':
+        return UatInboxSeverity.high;
+      case 'medium':
+      case 'p2':
+        return UatInboxSeverity.medium;
+      case 'low':
+      case 'p3':
+        return UatInboxSeverity.low;
+    }
+
+    final normalizedStatus = _normalize(status);
+    if (normalizedStatus == 'failed' ||
+        normalizedStatus == 'error' ||
+        normalizedStatus == 'forbidden' ||
+        normalizedStatus == 'timeout') {
+      return UatInboxSeverity.high;
+    }
+    if (normalizedStatus == 'partial' || normalizedStatus == 'warning') {
+      return UatInboxSeverity.medium;
+    }
+    return UatInboxSeverity.low;
+  }
+
+  String? _firstText(Map<String, dynamic> map, List<String> keys) {
+    for (final key in keys) {
+      final raw = map[key];
+      if (raw is String && raw.trim().isNotEmpty) {
+        return raw.trim();
+      }
+    }
+    return null;
+  }
+
+  String _normalize(String? value) {
+    return (value ?? '')
+        .trim()
+        .toLowerCase()
+        .replaceAll('-', '_')
+        .replaceAll(' ', '_');
+  }
+
+  String _humanize(String raw) {
+    final normalized = raw.trim().replaceAll('_', ' ').replaceAll('-', ' ');
+    if (normalized.isEmpty) {
+      return '-';
+    }
+    return normalized[0].toUpperCase() + normalized.substring(1);
+  }
 
   String _statusLabel(UatInboxStatus status) {
     switch (status) {
@@ -146,105 +345,169 @@ class UatInboxScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('UAT Inbox')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          Card(
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: [
-                  Chip(
-                    label: Text('open ${_countByStatus(UatInboxStatus.open)}'),
-                  ),
-                  Chip(
-                    label: Text(
-                      'in_progress ${_countByStatus(UatInboxStatus.inProgress)}',
-                    ),
-                  ),
-                  Chip(
-                    label: Text(
-                      'retest ${_countByStatus(UatInboxStatus.retest)}',
-                    ),
-                  ),
-                  Chip(
-                    label: Text(
-                      'closed ${_countByStatus(UatInboxStatus.closed)}',
-                    ),
-                  ),
-                ],
-              ),
-            ),
+      appBar: AppBar(
+        title: const Text('UAT Inbox'),
+        actions: [
+          IconButton(
+            tooltip: 'Neu laden',
+            onPressed: _isLoading ? null : _reloadInbox,
+            icon: const Icon(Icons.refresh),
           ),
-          const SizedBox(height: 8),
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.copy_all_outlined),
-              title: const Text('Neue Triage-Zeile kopieren'),
-              subtitle: const Text(
-                'Template fuer /docs/internal_uat_triage_board.md',
-              ),
-              onTap: () => _copyTemplateRow(context),
-            ),
-          ),
-          const SizedBox(height: 12),
-          const Text(
-            'Aktuelle Punkte',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-          ),
-          const SizedBox(height: 8),
-          ..._items.map((item) {
-            return Card(
-              margin: const EdgeInsets.only(bottom: 10),
-              child: ListTile(
-                title: Text('${item.id} - ${item.summary}'),
-                subtitle: Text(
-                  'Bereich: ${item.area}\nOwner: ${item.owner} | Build: ${item.targetBuild}',
-                ),
-                trailing: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _statusColor(item.status).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        _statusLabel(item.status),
-                        style: TextStyle(color: _statusColor(item.status)),
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 3,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _severityColor(
-                          item.severity,
-                        ).withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(999),
-                      ),
-                      child: Text(
-                        _severityLabel(item.severity),
-                        style: TextStyle(color: _severityColor(item.severity)),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
         ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: _reloadInbox,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (_isLoading && _items.isEmpty)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 64),
+                child: Center(child: CircularProgressIndicator()),
+              )
+            else ...[
+              if (_warning != null)
+                Card(
+                  color: Colors.red.shade900.withValues(alpha: 0.35),
+                  child: ListTile(
+                    leading: const Icon(Icons.error_outline),
+                    title: const Text('UAT Inbox nicht verfuegbar'),
+                    subtitle: Text(_warning!),
+                    trailing: TextButton(
+                      onPressed: _reloadInbox,
+                      child: const Text('Retry'),
+                    ),
+                  ),
+                ),
+              if (_usingFallbackFeed && _warning == null)
+                Card(
+                  color: Colors.orange.shade900.withValues(alpha: 0.25),
+                  child: const ListTile(
+                    leading: Icon(Icons.info_outline),
+                    title: Text('Fallback aktiv'),
+                    subtitle: Text(
+                      'Keine "uat"-markierten Eintraege gefunden. '
+                      'Es werden die letzten Betreiberaktionen angezeigt.',
+                    ),
+                  ),
+                ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(
+                        label: Text(
+                          'open ${_countByStatus(UatInboxStatus.open)}',
+                        ),
+                      ),
+                      Chip(
+                        label: Text(
+                          'in_progress ${_countByStatus(UatInboxStatus.inProgress)}',
+                        ),
+                      ),
+                      Chip(
+                        label: Text(
+                          'retest ${_countByStatus(UatInboxStatus.retest)}',
+                        ),
+                      ),
+                      Chip(
+                        label: Text(
+                          'closed ${_countByStatus(UatInboxStatus.closed)}',
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.copy_all_outlined),
+                  title: const Text('Neue Triage-Zeile kopieren'),
+                  subtitle: const Text(
+                    'Template fuer /docs/internal_uat_triage_board.md',
+                  ),
+                  onTap: () => _copyTemplateRow(context),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Aktuelle Punkte',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              if (_items.isEmpty)
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.inbox_outlined),
+                    title: const Text('Keine UAT-Eintraege vorhanden'),
+                    subtitle: const Text(
+                      'Lege Eintraege ueber das Betreiber-Aktionslog an '
+                      '(z. B. action_name mit "uat_").',
+                    ),
+                  ),
+                ),
+              ..._items.map((item) {
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  child: ListTile(
+                    title: Text('${item.id} - ${item.summary}'),
+                    subtitle: Text(
+                      'Bereich: ${item.area}\n'
+                      'Owner: ${item.owner} | Build: ${item.targetBuild}\n'
+                      'Zeit: ${item.createdAt.toLocal().toIso8601String()}',
+                    ),
+                    trailing: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _statusColor(
+                              item.status,
+                            ).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _statusLabel(item.status),
+                            style: TextStyle(color: _statusColor(item.status)),
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 3,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _severityColor(
+                              item.severity,
+                            ).withValues(alpha: 0.2),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _severityLabel(item.severity),
+                            style: TextStyle(
+                              color: _severityColor(item.severity),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              }),
+            ],
+          ],
+        ),
       ),
     );
   }
