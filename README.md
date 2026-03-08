@@ -29,6 +29,10 @@ samples, guidance on mobile development, and a full API reference.
   `docs/payment_rollout_decision.md`
 - Store metadata template:
   `docs/store_metadata_template.md`
+- Store metadata draft (ready-to-fill, DE):
+  `docs/store_metadata_release_draft_de.md`
+- Store upload dry-run checklist:
+  `docs/store_upload_dry_run_checklist.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`

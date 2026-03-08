@@ -1,6 +1,6 @@
 # Payment Rollout Decision
 
-Stand: 2026-03-01
+Stand: 2026-03-08
 
 ## Current State
 
@@ -28,6 +28,17 @@ Begruendung:
 - einfacher Support-Fall in frueher Phase
 - klare Trennung zwischen Produktstabilisierung und Monetarisierung
 
+## Release Candidate Decision (locked)
+
+Gewaehlt fuer den naechsten Store-Release-Kandidaten: `Option 1`.
+
+Konkrete Umsetzung:
+
+- Kunden-Top-up im Release-Build deaktivieren:
+  `--dart-define=CUSTOMER_TOP_UP_ENABLED=false`
+- Operator/Owner-Top-up bleibt fuer interne Betriebsablaeufe verfuegbar.
+- App-Store-Texte duerfen keine aktive Kunden-Aufladung versprechen.
+
 ## Exit Criteria to switch to Option 2
 
 - Payment provider integration produktiv und verifiziert
@@ -38,6 +49,6 @@ Begruendung:
 
 ## Sign-off
 
-- Entscheider:
-- Datum:
-- Gewaehlt: `Option 1` / `Option 2` / `Option 3`
+- Entscheider: Produkt/Betreiberteam
+- Datum: 2026-03-08
+- Gewaehlt: `Option 1`

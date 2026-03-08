@@ -1,7 +1,7 @@
 # Store Metadata Draft (DE)
 
-Stand: 2026-03-06  
-Status: `draft` (rechtliche URLs noch nicht live)
+Stand: 2026-03-08  
+Status: `draft` (rechtliche URLs live, Store-Compliance noch offen)
 
 ## 1) App Identity
 
@@ -72,12 +72,12 @@ Hinweis Dateibenennung:
 
 ## 5) Compliance-Check vor Upload
 
-- [ ] Datenschutz-URL liefert HTTP 200
-- [ ] Impressum-URL liefert HTTP 200
+- [x] Datenschutz-URL liefert HTTP 200
+- [x] Impressum-URL liefert HTTP 200
 - [ ] Data Safety (Google Play) ausgefuellt
 - [ ] Privacy Nutrition Label (Apple) ausgefuellt
 - [ ] Altersfreigabe beantwortet
-- [ ] Support-Kontakt in Store-Eintraegen identisch zur App
+- [x] Support-Kontakt in Store-Eintraegen identisch zur App
 - [ ] Falls Top-up fuer Kunden deaktiviert: Beschreibung nennt keine aktive In-App-Zahlung
 
 ## 6) Release Text (What’s New)

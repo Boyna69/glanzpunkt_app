@@ -1,6 +1,6 @@
 # Release Readiness Checklist
 
-Stand: 2026-03-04
+Stand: 2026-03-08
 
 ## 1. Build and Test Gate
 
@@ -67,7 +67,7 @@ Core scripts:
 ## 5. Remaining Work Before Store Submission
 
 - [x] final privacy policy and legal text review (live URLs and contact data).
-- [ ] production payment rollout decision (top-up policy for customers vs operator-only).
+- [x] production payment rollout decision (top-up policy for customers vs operator-only).
 - [ ] store metadata assets finalization (screenshots, descriptions, age rating).
 - [ ] final signing and store upload dry run for Android/iOS release artifacts.
 
@@ -77,6 +77,7 @@ Prepared templates:
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/payment_rollout_decision.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_template.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_release_draft_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_upload_dry_run_checklist.md`
 
 Current blocker notes:
 
@@ -103,6 +104,7 @@ Latest gate evidence:
 - 2026-03-04: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`) inkl. table exposure + operator health checks.
 - 2026-03-04: Android Release-Bundle erfolgreich gebaut: `build/app/outputs/bundle/release/app-release.aab`.
 - 2026-03-04: `supabase_migration_parity_report.sh` green (RPC contract, role access, table exposure, operator health).
+- 2026-03-08: `release_smoke.sh` green mit aktivem Legal-Check (`RUN_LEGAL_SUPPORT_CHECK=1`, beide Rechts-URLs final `200`).
 
 ## 7. CI Gates
 
