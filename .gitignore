@@ -50,3 +50,6 @@ app.*.map.json
 
 # Local pre-push release gate credentials
 /.release-gate.env
+
+# Local internal tester artifacts
+/artifacts/internal-test/
