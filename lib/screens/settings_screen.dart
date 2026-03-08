@@ -54,6 +54,20 @@ class SettingsScreen extends StatelessWidget {
         'Rolle: $role';
   }
 
+  String _buildDiagnosticsReport(AuthService auth, EnvironmentService env) {
+    final buildMode = kReleaseMode
+        ? 'release'
+        : (kProfileMode ? 'profile' : 'debug');
+    final platform = defaultTargetPlatform.name;
+    final timestamp = DateTime.now().toIso8601String();
+    return 'Glanzpunkt Diagnosebericht\n'
+        'Erstellt am: $timestamp\n'
+        'Build-Modus: $buildMode\n'
+        'Plattform: $platform\n'
+        'Customer-TopUp aktiv: ${AppConfig.customerTopUpEnabled ? 'ja' : 'nein'}\n\n'
+        '${_buildBackendDiagnostics(auth, env)}';
+  }
+
   Future<void> _confirmAndDeleteAccount(BuildContext context) async {
     final authService = context.read<AuthService>();
     final shouldDelete = await showDialog<bool>(
@@ -280,10 +294,31 @@ class SettingsScreen extends StatelessWidget {
                 'Quelle: ${AppConfig.supabaseApiKeySource}, '
                 'Key: ${AppConfig.maskedSupabaseApiKey}',
               ),
+              trailing: IconButton(
+                tooltip: 'Diagnosebericht kopieren',
+                icon: const Icon(Icons.copy_all_outlined),
+                onPressed: () => _copyToClipboard(
+                  context,
+                  _buildDiagnosticsReport(auth, env),
+                ),
+              ),
               onTap: () => _showInfoDialog(
                 context,
                 title: 'Backend-Diagnose',
                 message: _buildBackendDiagnostics(auth, env),
+              ),
+            ),
+          ),
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.bug_report_outlined),
+              title: const Text('Diagnosebericht kopieren'),
+              subtitle: const Text(
+                'Fuer Support-Tickets und interne Fehleranalyse',
+              ),
+              onTap: () => _copyToClipboard(
+                context,
+                _buildDiagnosticsReport(auth, env),
               ),
             ),
           ),
