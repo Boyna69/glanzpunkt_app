@@ -446,8 +446,8 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                     leading: const Icon(Icons.inbox_outlined),
                     title: const Text('Keine UAT-Eintraege vorhanden'),
                     subtitle: const Text(
-                      'Lege Eintraege ueber das Betreiber-Aktionslog an '
-                      '(z. B. action_name mit "uat_").',
+                      'Lege Eintraege ueber den UAT-Logging-Helper an '
+                      '(Details mit uat_status/severity).',
                     ),
                   ),
                 ),

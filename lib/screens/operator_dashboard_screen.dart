@@ -30,6 +30,7 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
   static const int _defaultLongActiveSessionThresholdMinutes = 20;
   static const int _operatorActionPageSize = 20;
   static const String _kpiBusinessTimeZone = 'Europe/Berlin';
+  static const String _defaultUatTargetBuild = 'current';
   static const Duration _operatorActionSearchDebounceDuration = Duration(
     milliseconds: 350,
   );
@@ -114,6 +115,11 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
     required String actionStatus,
     int? boxId,
     Map<String, dynamic>? details,
+    String? uatSummary,
+    String? uatArea,
+    OpsUatStatus? uatStatus,
+    OpsUatSeverity? uatSeverity,
+    String uatTargetBuild = _defaultUatTargetBuild,
   }) async {
     if (!mounted) {
       return;
@@ -124,12 +130,24 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
       return;
     }
     final baseUrl = context.read<EnvironmentService>().activeBaseUrl;
+    final summary = (uatSummary?.trim().isNotEmpty ?? false)
+        ? uatSummary!.trim()
+        : _operatorActionTitle(actionName);
+    final area = (uatArea?.trim().isNotEmpty ?? false)
+        ? uatArea!.trim()
+        : (boxId != null ? 'box_$boxId' : 'operator_dashboard');
     try {
-      await _opsMaintenance.logOperatorAction(
+      await _opsMaintenance.logUatAction(
         baseUrl: baseUrl,
         jwt: jwt,
         actionName: actionName,
         actionStatus: actionStatus,
+        summary: summary,
+        area: area,
+        uatStatus: uatStatus ?? _defaultUatStatusForActionStatus(actionStatus),
+        severity:
+            uatSeverity ?? _defaultUatSeverityForActionStatus(actionStatus),
+        targetBuild: uatTargetBuild,
         boxId: boxId,
         details: details,
       );
@@ -345,6 +363,10 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
       await _logOperatorActionSafe(
         actionName: 'quick_fix',
         actionStatus: 'success',
+        uatSummary: 'Quick-Fix erfolgreich ausgefuehrt',
+        uatArea: 'operator_dashboard',
+        uatStatus: OpsUatStatus.fixed,
+        uatSeverity: OpsUatSeverity.medium,
         details: <String, dynamic>{
           'expiredReservations': result.expiredReservations,
           'releasedReservedBoxes': result.releasedReservedBoxes,
@@ -376,6 +398,10 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
       await _logOperatorActionSafe(
         actionName: 'quick_fix',
         actionStatus: 'failed',
+        uatSummary: 'Quick-Fix fehlgeschlagen',
+        uatArea: 'operator_dashboard',
+        uatStatus: OpsUatStatus.open,
+        uatSeverity: OpsUatSeverity.high,
         details: <String, dynamic>{'error': _trimForTelemetry(e)},
       );
       if (mounted) {
@@ -523,6 +549,16 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
         await _logOperatorActionSafe(
           actionName: 'status_refresh',
           actionStatus: warning == null ? 'success' : 'partial',
+          uatSummary: warning == null
+              ? 'Status-Refresh erfolgreich'
+              : 'Status-Refresh mit Warnungen',
+          uatArea: 'operator_dashboard',
+          uatStatus: warning == null
+              ? OpsUatStatus.closed
+              : OpsUatStatus.inProgress,
+          uatSeverity: warning == null
+              ? OpsUatSeverity.low
+              : OpsUatSeverity.medium,
           details: <String, dynamic>{
             'warning': warning == null ? 'none' : 'present',
             'historyRows': nextHistory.length,
@@ -558,6 +594,10 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
         await _logOperatorActionSafe(
           actionName: 'status_refresh',
           actionStatus: 'failed',
+          uatSummary: 'Status-Refresh fehlgeschlagen',
+          uatArea: 'operator_dashboard',
+          uatStatus: OpsUatStatus.open,
+          uatSeverity: OpsUatSeverity.high,
           details: <String, dynamic>{'error': _trimForTelemetry(e)},
         );
         if (mounted) {
@@ -661,6 +701,9 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
         actionName: 'mark_cleaned',
         actionStatus: 'success',
         boxId: boxNumber,
+        uatSummary: 'Reinigung fuer Box $boxNumber gespeichert',
+        uatStatus: OpsUatStatus.closed,
+        uatSeverity: OpsUatSeverity.low,
         details: <String, dynamic>{'hasNote': note.isNotEmpty},
       );
       if (mounted) {
@@ -687,6 +730,9 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
         actionName: 'mark_cleaned',
         actionStatus: 'failed',
         boxId: boxNumber,
+        uatSummary: 'Reinigung fuer Box $boxNumber fehlgeschlagen',
+        uatStatus: OpsUatStatus.open,
+        uatSeverity: OpsUatSeverity.high,
         details: <String, dynamic>{'error': _trimForTelemetry(e)},
       );
       if (mounted) {
@@ -884,6 +930,10 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
       await _logOperatorActionSafe(
         actionName: 'update_thresholds',
         actionStatus: 'failed',
+        uatSummary: 'Threshold-Update fehlgeschlagen',
+        uatArea: 'threshold_settings',
+        uatStatus: OpsUatStatus.open,
+        uatSeverity: OpsUatSeverity.high,
         details: <String, dynamic>{
           'error': _trimForTelemetry(e),
           'beforeCleaningIntervalWashes': previousCleaningIntervalWashes,
@@ -954,6 +1004,37 @@ class _OperatorDashboardScreenState extends State<OperatorDashboardScreen> {
       return raw;
     }
     return '${raw.substring(0, maxLength)}...';
+  }
+
+  OpsUatStatus _defaultUatStatusForActionStatus(String actionStatus) {
+    switch (actionStatus.trim().toLowerCase()) {
+      case 'success':
+        return OpsUatStatus.closed;
+      case 'partial':
+      case 'warning':
+        return OpsUatStatus.inProgress;
+      case 'fixed':
+        return OpsUatStatus.fixed;
+      case 'retest':
+        return OpsUatStatus.retest;
+      default:
+        return OpsUatStatus.open;
+    }
+  }
+
+  OpsUatSeverity _defaultUatSeverityForActionStatus(String actionStatus) {
+    switch (actionStatus.trim().toLowerCase()) {
+      case 'failed':
+      case 'error':
+      case 'timeout':
+      case 'forbidden':
+        return OpsUatSeverity.high;
+      case 'partial':
+      case 'warning':
+        return OpsUatSeverity.medium;
+      default:
+        return OpsUatSeverity.low;
+    }
   }
 
   String _operatorActionTitle(String name) {

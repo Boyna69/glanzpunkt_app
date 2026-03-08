@@ -250,6 +250,10 @@ class OpsOperatorThresholdSettings {
   });
 }
 
+enum OpsUatStatus { open, inProgress, fixed, retest, closed }
+
+enum OpsUatSeverity { critical, high, medium, low }
+
 class OpsMaintenanceService {
   final BackendHttpClient _httpClient;
 
@@ -1119,6 +1123,70 @@ class OpsMaintenanceService {
         kind: BackendHttpErrorKind.invalidResponse,
         message: 'Operator-Aktionslog: Response ist kein JSON-Objekt.',
       );
+    }
+  }
+
+  Future<void> logUatAction({
+    required String baseUrl,
+    required String jwt,
+    required String actionName,
+    required String actionStatus,
+    required String summary,
+    required String area,
+    OpsUatStatus uatStatus = OpsUatStatus.open,
+    OpsUatSeverity severity = OpsUatSeverity.medium,
+    int? boxId,
+    String targetBuild = 'current',
+    Map<String, dynamic>? details,
+    String source = 'app',
+  }) async {
+    final mergedDetails = <String, dynamic>{
+      ...?details,
+      'summary': summary.trim(),
+      'area': area.trim().isEmpty ? 'operator' : area.trim(),
+      'uat_status': _uatStatusValue(uatStatus),
+      'severity': _uatSeverityValue(severity),
+      'target_build': targetBuild.trim().isEmpty
+          ? 'current'
+          : targetBuild.trim(),
+      'logged_via': 'app_uat_helper',
+    };
+    await logOperatorAction(
+      baseUrl: baseUrl,
+      jwt: jwt,
+      actionName: actionName,
+      actionStatus: actionStatus,
+      boxId: boxId,
+      details: mergedDetails,
+      source: source,
+    );
+  }
+
+  String _uatStatusValue(OpsUatStatus status) {
+    switch (status) {
+      case OpsUatStatus.open:
+        return 'open';
+      case OpsUatStatus.inProgress:
+        return 'in_progress';
+      case OpsUatStatus.fixed:
+        return 'fixed';
+      case OpsUatStatus.retest:
+        return 'retest';
+      case OpsUatStatus.closed:
+        return 'closed';
+    }
+  }
+
+  String _uatSeverityValue(OpsUatSeverity severity) {
+    switch (severity) {
+      case OpsUatSeverity.critical:
+        return 'critical';
+      case OpsUatSeverity.high:
+        return 'high';
+      case OpsUatSeverity.medium:
+        return 'medium';
+      case OpsUatSeverity.low:
+        return 'low';
     }
   }
 }

@@ -981,4 +981,73 @@ void main() {
       throwsA(predicate((e) => e is StateError && '$e'.contains('forbidden'))),
     );
   });
+
+  test('logUatAction posts standardized uat details payload', () async {
+    final client = _FakeBackendHttpClient()
+      ..nextPostResponse = const BackendHttpResponse(
+        statusCode: 200,
+        body: <String, dynamic>{'id': 99},
+      );
+    final service = OpsMaintenanceService(httpClient: client);
+
+    await service.logUatAction(
+      baseUrl: 'https://example.supabase.co',
+      jwt: 'jwt-token',
+      actionName: 'status_refresh',
+      actionStatus: 'failed',
+      summary: 'Status-Refresh fehlgeschlagen',
+      area: 'operator_dashboard',
+      uatStatus: OpsUatStatus.open,
+      severity: OpsUatSeverity.high,
+      targetBuild: '1.0.3+4',
+      boxId: 2,
+      details: <String, dynamic>{'error': 'timeout'},
+    );
+
+    expect(
+      client.lastPostUri.toString(),
+      'https://example.supabase.co/rest/v1/rpc/log_operator_action',
+    );
+    expect(client.lastPostPayload?['action_name'], 'status_refresh');
+    expect(client.lastPostPayload?['action_status'], 'failed');
+    expect(client.lastPostPayload?['source'], 'app');
+    expect(client.lastPostPayload?['box_id'], 2);
+    expect(client.lastPostPayload?['details'], <String, dynamic>{
+      'error': 'timeout',
+      'summary': 'Status-Refresh fehlgeschlagen',
+      'area': 'operator_dashboard',
+      'uat_status': 'open',
+      'severity': 'high',
+      'target_build': '1.0.3+4',
+      'logged_via': 'app_uat_helper',
+    });
+  });
+
+  test('logUatAction applies safe defaults for area and build', () async {
+    final client = _FakeBackendHttpClient()
+      ..nextPostResponse = const BackendHttpResponse(
+        statusCode: 200,
+        body: <String, dynamic>{'id': 100},
+      );
+    final service = OpsMaintenanceService(httpClient: client);
+
+    await service.logUatAction(
+      baseUrl: 'https://example.supabase.co',
+      jwt: 'jwt-token',
+      actionName: 'quick_fix',
+      actionStatus: 'success',
+      summary: 'Quick-Fix ausgefuehrt',
+      area: '   ',
+      details: <String, dynamic>{'updatedBoxes': 6},
+    );
+
+    final details = client.lastPostPayload?['details'] as Map<String, dynamic>;
+    expect(details['summary'], 'Quick-Fix ausgefuehrt');
+    expect(details['area'], 'operator');
+    expect(details['target_build'], 'current');
+    expect(details['uat_status'], 'open');
+    expect(details['severity'], 'medium');
+    expect(details['logged_via'], 'app_uat_helper');
+    expect(details['updatedBoxes'], 6);
+  });
 }
