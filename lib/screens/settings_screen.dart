@@ -231,17 +231,32 @@ class SettingsScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         children: [
           if (auth.hasOperatorAccess)
-            Card(
-              child: ListTile(
-                leading: const Icon(Icons.admin_panel_settings_outlined),
-                title: const Text('Betreiber Dashboard'),
-                subtitle: const Text(
-                  'Monitoring, Quick-Fix und Betriebssteuerung',
+            Column(
+              children: [
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.admin_panel_settings_outlined),
+                    title: const Text('Betreiber Dashboard'),
+                    subtitle: const Text(
+                      'Monitoring, Quick-Fix und Betriebssteuerung',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () =>
+                        Navigator.pushNamed(context, '/operator-dashboard'),
+                  ),
                 ),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () =>
-                    Navigator.pushNamed(context, '/operator-dashboard'),
-              ),
+                Card(
+                  child: ListTile(
+                    leading: const Icon(Icons.inbox_outlined),
+                    title: const Text('UAT Inbox'),
+                    subtitle: const Text(
+                      'Offene Testpunkte, Prioritaeten und Status',
+                    ),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.pushNamed(context, '/uat-inbox'),
+                  ),
+                ),
+              ],
             )
           else
             Card(
@@ -344,10 +359,8 @@ class SettingsScreen extends StatelessWidget {
               subtitle: const Text(
                 'Fuer Support-Tickets und interne Fehleranalyse',
               ),
-              onTap: () => _copyToClipboard(
-                context,
-                _buildDiagnosticsReport(auth, env),
-              ),
+              onTap: () =>
+                  _copyToClipboard(context, _buildDiagnosticsReport(auth, env)),
             ),
           ),
           const SizedBox(height: 20),

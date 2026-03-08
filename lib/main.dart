@@ -12,6 +12,7 @@ import 'screens/wallet_screen.dart';
 import 'screens/settings_screen.dart';
 import 'screens/monitoring_screen.dart';
 import 'screens/operator_dashboard_screen.dart';
+import 'screens/uat_inbox_screen.dart';
 import 'widgets/operator_access_guard.dart';
 
 import 'services/auth_service.dart';
@@ -139,6 +140,10 @@ class MyApp extends StatelessWidget {
         '/operator-dashboard': (_) => const OperatorAccessGuard(
           title: 'Betreiber Dashboard',
           child: OperatorDashboardScreen(),
+        ),
+        '/uat-inbox': (_) => const OperatorAccessGuard(
+          title: 'UAT Inbox',
+          child: UatInboxScreen(),
         ),
       },
     );
