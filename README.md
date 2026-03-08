@@ -35,6 +35,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/store_upload_dry_run_checklist.md`
 - Internal test distribution (without Store release):
   `docs/internal_test_distribution.md`
+- Internal UAT runbook + bug triage templates:
+  `docs/internal_uat_runbook.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`
