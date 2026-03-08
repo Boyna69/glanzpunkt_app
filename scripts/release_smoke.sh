@@ -29,9 +29,10 @@ if [ "${RUN_SUPABASE_SMOKE:-0}" = "1" ]; then
     echo "== Supabase quick RPC flow check =="
     WAIT="${SUPABASE_WAIT_SECONDS:-130}"
     QUICK_BOX_ID="${SUPABASE_QUICK_FLOW_BOX_ID:-1}"
+    QUICK_BOX_IDS="${SUPABASE_QUICK_FLOW_BOX_IDS:-$QUICK_BOX_ID 2 3 4 5 6}"
     QUICK_AMOUNT="${SUPABASE_QUICK_FLOW_AMOUNT:-1}"
     A_EMAIL="$A_EMAIL" A_PASSWORD="$A_PASSWORD" SUPABASE_ANON_KEY="$SUPABASE_API_KEY" \
-      BOX_ID="$QUICK_BOX_ID" AMOUNT="$QUICK_AMOUNT" WAIT_SECONDS="$WAIT" \
+      BOX_ID="$QUICK_BOX_ID" BOX_IDS="$QUICK_BOX_IDS" AMOUNT="$QUICK_AMOUNT" WAIT_SECONDS="$WAIT" \
       "$ROOT/scripts/supabase_activate_countdown_e2e.sh"
   else
     echo "== Supabase quick RPC flow check skipped (RUN_SUPABASE_QUICK_FLOW_CHECK=0) =="

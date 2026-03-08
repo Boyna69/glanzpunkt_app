@@ -105,6 +105,8 @@ Latest gate evidence:
 - 2026-03-04: Android Release-Bundle erfolgreich gebaut: `build/app/outputs/bundle/release/app-release.aab`.
 - 2026-03-04: `supabase_migration_parity_report.sh` green (RPC contract, role access, table exposure, operator health).
 - 2026-03-08: `release_smoke.sh` green mit aktivem Legal-Check (`RUN_LEGAL_SUPPORT_CHECK=1`, beide Rechts-URLs final `200`).
+- 2026-03-08: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`, `RUN_SUPABASE_QUICK_FLOW_CHECK=0`) inkl. A/B isolation, RPC contract, role access, table exposure, operator health, cleaning workflow, action log, KPI export, owner-threshold e2e.
+- 2026-03-08: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`, Quick-Flow aktiv) inkl. aktivem `supabase_activate_countdown_e2e` (Reserve/Activate/Expire/Status).
 
 ## 7. CI Gates
 
@@ -141,3 +143,16 @@ Optional GitHub Variables (for legal/support check):
 - `LEGAL_PRIVACY_URL`
 - `LEGAL_IMPRINT_URL`
 - `SUPPORT_EMAIL`
+
+## 8. Internal Distribution (No Public Store Release)
+
+- [x] Android signed tester artifact path documented (`app-release.apk`).
+- [ ] private APK delivery channel selected (Drive/MDM/Firebase App Distribution).
+- [ ] tester install guide shared (unknown sources + rollback path).
+- [ ] iOS path chosen:
+  - local Xcode install only (no cost), or
+  - TestFlight (requires paid Apple Developer account).
+
+Reference:
+
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_test_distribution.md`

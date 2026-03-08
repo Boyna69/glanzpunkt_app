@@ -6,6 +6,7 @@ KEY="${SUPABASE_ANON_KEY:-${SUPABASE_PUBLISHABLE_KEY:-}}"
 EMAIL="${A_EMAIL:-}"
 PASSWORD="${A_PASSWORD:-}"
 BOX_ID="${BOX_ID:-1}"
+BOX_IDS="${BOX_IDS:-$BOX_ID}"
 AMOUNT="${AMOUNT:-1}"
 WAIT_SECONDS="${WAIT_SECONDS:-}"
 WAIT_GRACE_SECONDS="${WAIT_GRACE_SECONDS:-10}"
@@ -16,6 +17,7 @@ if [ -z "$EMAIL" ] || [ -z "$PASSWORD" ]; then
   echo "Missing credentials."
   echo "Usage: A_EMAIL='mail' A_PASSWORD='pass' SUPABASE_PUBLISHABLE_KEY='sb_publishable_...' scripts/supabase_activate_countdown_e2e.sh"
   echo "   or (legacy): A_EMAIL='mail' A_PASSWORD='pass' SUPABASE_ANON_KEY='...' scripts/supabase_activate_countdown_e2e.sh"
+  echo "Optional: BOX_IDS='1 2 3 4 5 6' to auto-pick the first available box."
   exit 2
 fi
 
@@ -93,13 +95,51 @@ if [ "$AUTO_TOP_UP" = "1" ]; then
   fi
 fi
 
-echo "== Reserve box $BOX_ID =="
-RESERVE="$(curl -sS -X POST "$BASE/rest/v1/rpc/reserve" "${auth_hdr[@]}" -d "{\"box_id\":$BOX_ID}")"
-echo "$RESERVE"
-assert_no_error_code "$RESERVE" "reserve"
-if ! echo "$RESERVE" | grep -q '"reservation_token"'; then
-  fail "reserve did not return reservation_token"
+BOX_ID_CANDIDATES="$(echo "$BOX_IDS" | tr ',' ' ')"
+SELECTED_BOX_ID=""
+
+try_reserve_any_box() {
+  SELECTED_BOX_ID=""
+  for candidate_box_id in ${=BOX_ID_CANDIDATES}; do
+    if ! echo "$candidate_box_id" | grep -Eq '^[0-9]+$'; then
+      continue
+    fi
+    echo "== Reserve box $candidate_box_id =="
+    RESERVE="$(curl -sS -X POST "$BASE/rest/v1/rpc/reserve" "${auth_hdr[@]}" -d "{\"box_id\":$candidate_box_id}")"
+    echo "$RESERVE"
+    if echo "$RESERVE" | grep -q '"reservation_token"'; then
+      SELECTED_BOX_ID="$candidate_box_id"
+      return 0
+    fi
+    if echo "$RESERVE" | grep -q '"message":"box_unavailable"'; then
+      echo "INFO: box $candidate_box_id unavailable, trying next candidate."
+      continue
+    fi
+    assert_no_error_code "$RESERVE" "reserve"
+    fail "reserve did not return reservation_token"
+  done
+  return 1
+}
+
+if ! try_reserve_any_box; then
+  echo "== Reconcile stale sessions before reserve retry =="
+  EXPIRE_PRE_RESERVE="$(curl -sS -X POST "$BASE/rest/v1/rpc/expire_active_sessions" "${auth_hdr[@]}" -d '{}')"
+  echo "$EXPIRE_PRE_RESERVE"
+  if echo "$EXPIRE_PRE_RESERVE" | grep -q '"message":"forbidden"'; then
+    fail "expire_active_sessions forbidden during pre-reserve reconciliation"
+  fi
+  assert_no_error_code "$EXPIRE_PRE_RESERVE" "expire_active_sessions pre-reserve"
+  echo
+  if ! try_reserve_any_box; then
+    fail "no available box found in BOX_IDS='$BOX_IDS' after reconciliation retry"
+  fi
 fi
+
+if [ -z "$SELECTED_BOX_ID" ]; then
+  fail "no available box found in BOX_IDS='$BOX_IDS'"
+fi
+BOX_ID="$SELECTED_BOX_ID"
+echo "INFO: selected box $BOX_ID"
 
 echo "== Activate box $BOX_ID (amount=$AMOUNT) =="
 ACTIVATE="$(curl -sS -X POST "$BASE/rest/v1/rpc/activate" "${auth_hdr[@]}" -d "{\"box_id\":$BOX_ID,\"amount\":$AMOUNT}")"

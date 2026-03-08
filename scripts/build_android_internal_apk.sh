@@ -1,0 +1,90 @@
+#!/bin/zsh
+set -euo pipefail
+
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+SKIP_PRECHECKS="${SKIP_PRECHECKS:-0}"
+RUN_CLEAN="${RUN_CLEAN:-0}"
+USE_MOCK_BACKEND_VALUE="${USE_MOCK_BACKEND_VALUE:-false}"
+CUSTOMER_TOP_UP_ENABLED_VALUE="${CUSTOMER_TOP_UP_ENABLED:-}"
+
+if [ "$USE_MOCK_BACKEND_VALUE" != "false" ]; then
+  echo "FAILED: internal APK build requires USE_MOCK_BACKEND=false"
+  exit 2
+fi
+
+if [ -n "$CUSTOMER_TOP_UP_ENABLED_VALUE" ] && [ "$CUSTOMER_TOP_UP_ENABLED_VALUE" != "true" ] && [ "$CUSTOMER_TOP_UP_ENABLED_VALUE" != "false" ]; then
+  echo "FAILED: CUSTOMER_TOP_UP_ENABLED must be true or false when provided."
+  exit 2
+fi
+
+if [ ! -f "$ROOT/android/key.properties" ]; then
+  echo "FAILED: android/key.properties is missing."
+  echo "Create it from android/key.properties.example and set store/key passwords."
+  exit 2
+fi
+
+if [ "$RUN_CLEAN" = "1" ]; then
+  echo "== flutter clean =="
+  flutter clean
+fi
+
+echo "== flutter pub get =="
+flutter pub get
+
+if [ "$SKIP_PRECHECKS" != "1" ]; then
+  echo "== flutter analyze =="
+  flutter analyze
+  echo "== flutter test =="
+  flutter test
+fi
+
+BUILD_ARGS=(
+  build
+  apk
+  --release
+  --dart-define=USE_MOCK_BACKEND=false
+)
+
+if [ -n "${SUPABASE_URL:-}" ]; then
+  BUILD_ARGS+=(--dart-define="SUPABASE_URL=$SUPABASE_URL")
+fi
+if [ -n "${SUPABASE_PUBLISHABLE_KEY:-}" ]; then
+  BUILD_ARGS+=(--dart-define="SUPABASE_PUBLISHABLE_KEY=$SUPABASE_PUBLISHABLE_KEY")
+fi
+if [ -n "${BACKEND_BASE_URL_DEV:-}" ]; then
+  BUILD_ARGS+=(--dart-define="BACKEND_BASE_URL_DEV=$BACKEND_BASE_URL_DEV")
+fi
+if [ -n "${LEGAL_PRIVACY_URL:-}" ]; then
+  BUILD_ARGS+=(--dart-define="LEGAL_PRIVACY_URL=$LEGAL_PRIVACY_URL")
+fi
+if [ -n "${LEGAL_IMPRINT_URL:-}" ]; then
+  BUILD_ARGS+=(--dart-define="LEGAL_IMPRINT_URL=$LEGAL_IMPRINT_URL")
+fi
+if [ -n "${SUPPORT_EMAIL:-}" ]; then
+  BUILD_ARGS+=(--dart-define="SUPPORT_EMAIL=$SUPPORT_EMAIL")
+fi
+if [ -n "$CUSTOMER_TOP_UP_ENABLED_VALUE" ]; then
+  BUILD_ARGS+=(--dart-define="CUSTOMER_TOP_UP_ENABLED=$CUSTOMER_TOP_UP_ENABLED_VALUE")
+fi
+
+echo "== flutter ${BUILD_ARGS[*]} =="
+flutter "${BUILD_ARGS[@]}"
+
+APK_PATH="$ROOT/build/app/outputs/flutter-apk/app-release.apk"
+if [ ! -f "$APK_PATH" ]; then
+  echo "FAILED: expected APK not found at $APK_PATH"
+  exit 3
+fi
+
+echo "== artifact =="
+ls -lh "$APK_PATH"
+
+if command -v shasum >/dev/null 2>&1; then
+  shasum -a 256 "$APK_PATH"
+elif command -v sha256sum >/dev/null 2>&1; then
+  sha256sum "$APK_PATH"
+fi
+
+echo "ANDROID INTERNAL APK BUILD PASSED"

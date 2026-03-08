@@ -33,6 +33,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/store_metadata_release_draft_de.md`
 - Store upload dry-run checklist:
   `docs/store_upload_dry_run_checklist.md`
+- Internal test distribution (without Store release):
+  `docs/internal_test_distribution.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`
@@ -124,6 +126,8 @@ samples, guidance on mobile development, and a full API reference.
     `OWNER_EMAIL=... OWNER_PASSWORD=...`
   - optional runtime for expiry smoke (default `130` seconds):
     `SUPABASE_WAIT_SECONDS=130`
+  - optional candidate boxes for quick-flow (first available is used):
+    `SUPABASE_QUICK_FLOW_BOX_IDS='1 2 3 4 5 6'`
   - optional full 1-6 box cycle:
     `RUN_SUPABASE_BOX_CYCLE=1`
   - optional legal/support live check:
@@ -196,3 +200,7 @@ samples, guidance on mobile development, and a full API reference.
   - `scripts/build_android_release.sh`
   - optional customer top-up toggle for release builds:
     `CUSTOMER_TOP_UP_ENABLED=false scripts/build_android_release.sh`
+- Android internal test APK build helper (direct install for testers):
+  - `scripts/build_android_internal_apk.sh`
+  - example:
+    `CUSTOMER_TOP_UP_ENABLED=false scripts/build_android_internal_apk.sh`
