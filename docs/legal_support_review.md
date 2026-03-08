@@ -1,6 +1,6 @@
 # Legal and Support Review (Pre-Store)
 
-Stand: 2026-03-01
+Stand: 2026-03-08
 
 Ziel: finaler Check fuer Punkt "Rechtliches & Support" vor Store-Submission.
 
@@ -43,16 +43,16 @@ Ziel: finaler Check fuer Punkt "Rechtliches & Support" vor Store-Submission.
 - Datum:
 - Ergebnis: `PASS` / `FAIL`
 
-## 6) Letzte Live-Pruefung (2026-03-06)
+## 6) Letzte Live-Pruefung (2026-03-08)
 
 - `https://www.glanzpunkt-wahlstedt.de/datenschutz` -> Redirect auf
-  `https://glanzpunkt-wahlstedt.de/datenschutz` -> final `404`
+  `https://glanzpunkt-wahlstedt.de/datenschutz/` -> final `200`
 - `https://www.glanzpunkt-wahlstedt.de/impressum` -> Redirect auf
-  `https://glanzpunkt-wahlstedt.de/impressum` -> final `404`
+  `https://glanzpunkt-wahlstedt.de/impressum/` -> final `200`
 
-Aktueller Stand: `FAIL` (Release-Blocker bis die Zielseiten live 200 liefern).
+Aktueller Stand: `PASS`.
 
-## 7) Root-Cause Snapshot (2026-03-06)
+## 7) Root-Cause Snapshot (historisch, 2026-03-06)
 
 - Live-Pruefung zeigt weiter `404` fuer Datenschutz/Impressum.
 - `wp-json` Seitenliste liefert aktuell nur:

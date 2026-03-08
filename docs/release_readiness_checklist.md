@@ -66,7 +66,7 @@ Core scripts:
 
 ## 5. Remaining Work Before Store Submission
 
-- [ ] final privacy policy and legal text review (live URLs and contact data).
+- [x] final privacy policy and legal text review (live URLs and contact data).
 - [ ] production payment rollout decision (top-up policy for customers vs operator-only).
 - [ ] store metadata assets finalization (screenshots, descriptions, age rating).
 - [ ] final signing and store upload dry run for Android/iOS release artifacts.
@@ -80,10 +80,11 @@ Prepared templates:
 
 Current blocker notes:
 
-- 2026-03-06: `scripts/legal_support_check.sh` fail (Datenschutz/Impressum final
-  HTTP `404`).
+- 2026-03-08: Legal/support live check `PASS` (beide URLs final `200`).
+- 2026-03-06: `scripts/legal_support_check.sh` fail (historisch, davor
+  Datenschutz/Impressum final HTTP `404`).
 - 2026-03-04: Legal URLs currently fail live HTTP check (final `404` for
-  Datenschutz/Impressum), see `docs/legal_support_review.md`.
+  Datenschutz/Impressum), see `docs/legal_support_review.md` (historisch).
 
 ## 6. Go/No-Go Rule
 
