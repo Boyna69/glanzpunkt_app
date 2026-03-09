@@ -5,61 +5,83 @@
 
 begin;
 
--- Ensure no broad execution rights remain.
-revoke all on function public.require_operator_or_owner() from public, anon;
-revoke all on function public.reserve(integer) from public, anon;
-revoke all on function public.cancel_reservation(integer) from public, anon;
-revoke all on function public.activate(integer, integer) from public, anon;
-revoke all on function public.activate_reward(integer) from public, anon;
-revoke all on function public.stop(text) from public, anon;
-revoke all on function public.status(integer) from public, anon;
-revoke all on function public.recent_sessions(integer) from public, anon;
-revoke all on function public.expire_active_sessions() from public, anon;
-revoke all on function public.expire_active_sessions_internal() from public, anon;
-revoke all on function public.top_up(integer) from public, anon;
-revoke all on function public.loyalty_status() from public, anon;
-revoke all on function public.record_purchase() from public, anon;
-revoke all on function public.monitoring_snapshot() from public, anon;
-revoke all on function public.kpi_export(text) from public, anon;
-revoke all on function public.get_box_cleaning_plan(integer) from public, anon;
-revoke all on function public.get_box_cleaning_history(integer, integer) from public, anon;
-revoke all on function public.mark_box_cleaned(integer, text) from public, anon;
-revoke all on function public.log_operator_action(text, text, integer, jsonb, text) from public, anon;
-revoke all on function public.list_operator_actions(integer) from public, anon;
-revoke all on function public.list_operator_actions_filtered(integer, integer, text, integer, text, timestamptz, timestamptz) from public, anon;
-revoke all on function public.set_uat_ticket_status(bigint, text, text) from public, anon;
-revoke all on function public.assign_uat_ticket_owner(bigint, text, text) from public, anon;
-revoke all on function public.get_operator_threshold_settings() from public, anon;
-revoke all on function public.set_operator_threshold_settings(integer, integer) from public, anon;
-revoke all on function public.handle_new_auth_user_profile() from public, anon;
-revoke all on function public.bump_box_cleaning_counter_on_session() from public, anon;
-revoke all on function public.loyalty_derived_state(uuid) from public, anon, authenticated;
+do $$
+declare
+  fn text;
+  revoke_public_anon text[] := array[
+    'public.require_operator_or_owner()',
+    'public.reserve(integer)',
+    'public.cancel_reservation(integer)',
+    'public.activate(integer,integer)',
+    'public.activate_reward(integer)',
+    'public.stop(text)',
+    'public.status(integer)',
+    'public.recent_sessions(integer)',
+    'public.expire_active_sessions()',
+    'public.expire_active_sessions_internal()',
+    'public.top_up(integer)',
+    'public.loyalty_status()',
+    'public.record_purchase()',
+    'public.monitoring_snapshot()',
+    'public.kpi_export(text)',
+    'public.get_box_cleaning_plan(integer)',
+    'public.get_box_cleaning_history(integer,integer)',
+    'public.mark_box_cleaned(integer,text)',
+    'public.log_operator_action(text,text,integer,jsonb,text)',
+    'public.list_operator_actions(integer)',
+    'public.list_operator_actions_filtered(integer,integer,text,integer,text,timestamptz,timestamptz)',
+    'public.set_uat_ticket_status(bigint,text,text)',
+    'public.assign_uat_ticket_owner(bigint,text,text)',
+    'public.get_operator_threshold_settings()',
+    'public.set_operator_threshold_settings(integer,integer)',
+    'public.handle_new_auth_user_profile()',
+    'public.bump_box_cleaning_counter_on_session()'
+  ];
+  grant_authenticated text[] := array[
+    'public.require_operator_or_owner()',
+    'public.reserve(integer)',
+    'public.cancel_reservation(integer)',
+    'public.activate(integer,integer)',
+    'public.activate_reward(integer)',
+    'public.stop(text)',
+    'public.status(integer)',
+    'public.recent_sessions(integer)',
+    'public.expire_active_sessions()',
+    'public.top_up(integer)',
+    'public.loyalty_status()',
+    'public.record_purchase()',
+    'public.monitoring_snapshot()',
+    'public.kpi_export(text)',
+    'public.get_box_cleaning_plan(integer)',
+    'public.get_box_cleaning_history(integer,integer)',
+    'public.mark_box_cleaned(integer,text)',
+    'public.log_operator_action(text,text,integer,jsonb,text)',
+    'public.list_operator_actions(integer)',
+    'public.list_operator_actions_filtered(integer,integer,text,integer,text,timestamptz,timestamptz)',
+    'public.set_uat_ticket_status(bigint,text,text)',
+    'public.assign_uat_ticket_owner(bigint,text,text)',
+    'public.get_operator_threshold_settings()',
+    'public.set_operator_threshold_settings(integer,integer)'
+  ];
+begin
+  foreach fn in array revoke_public_anon loop
+    if to_regprocedure(fn) is not null then
+      execute format('revoke all on function %s from public, anon', fn);
+    end if;
+  end loop;
 
--- App-facing RPCs: authenticated only.
-grant execute on function public.require_operator_or_owner() to authenticated;
-grant execute on function public.reserve(integer) to authenticated;
-grant execute on function public.cancel_reservation(integer) to authenticated;
-grant execute on function public.activate(integer, integer) to authenticated;
-grant execute on function public.activate_reward(integer) to authenticated;
-grant execute on function public.stop(text) to authenticated;
-grant execute on function public.status(integer) to authenticated;
-grant execute on function public.recent_sessions(integer) to authenticated;
-grant execute on function public.expire_active_sessions() to authenticated;
-grant execute on function public.top_up(integer) to authenticated;
-grant execute on function public.loyalty_status() to authenticated;
-grant execute on function public.record_purchase() to authenticated;
-grant execute on function public.monitoring_snapshot() to authenticated;
-grant execute on function public.kpi_export(text) to authenticated;
-grant execute on function public.get_box_cleaning_plan(integer) to authenticated;
-grant execute on function public.get_box_cleaning_history(integer, integer) to authenticated;
-grant execute on function public.mark_box_cleaned(integer, text) to authenticated;
-grant execute on function public.log_operator_action(text, text, integer, jsonb, text) to authenticated;
-grant execute on function public.list_operator_actions(integer) to authenticated;
-grant execute on function public.list_operator_actions_filtered(integer, integer, text, integer, text, timestamptz, timestamptz) to authenticated;
-grant execute on function public.set_uat_ticket_status(bigint, text, text) to authenticated;
-grant execute on function public.assign_uat_ticket_owner(bigint, text, text) to authenticated;
-grant execute on function public.get_operator_threshold_settings() to authenticated;
-grant execute on function public.set_operator_threshold_settings(integer, integer) to authenticated;
+  -- Optional legacy function: only revoke when present.
+  if to_regprocedure('public.loyalty_derived_state(uuid)') is not null then
+    execute 'revoke all on function public.loyalty_derived_state(uuid) from public, anon, authenticated';
+  end if;
+
+  foreach fn in array grant_authenticated loop
+    if to_regprocedure(fn) is not null then
+      execute format('grant execute on function %s to authenticated', fn);
+    end if;
+  end loop;
+end
+$$;
 
 commit;
 
