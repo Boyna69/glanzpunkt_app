@@ -113,4 +113,4 @@ jobs:
           B_EMAIL="$B_EMAIL_CLEAN" \
           B_PASSWORD="$B_PASSWORD_CLEAN" \
           SUPABASE_PUBLISHABLE_KEY="$SUPABASE_KEY_CLEAN" \
-          "${{ github.workspace }}/scripts/release_gate.sh"
+          "${{ github.workspace }}/scripts/release_gate_quick.sh"

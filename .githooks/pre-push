@@ -71,10 +71,6 @@ EOF
 fi
 
 echo "[pre-push] Running release gate for push to main..."
-RUN_SUPABASE_QUICK_FLOW_CHECK="${RUN_SUPABASE_QUICK_FLOW_CHECK:-0}" \
-SUPABASE_QUICK_FLOW_BOX_ID="${SUPABASE_QUICK_FLOW_BOX_ID:-1}" \
-SUPABASE_QUICK_FLOW_AMOUNT="${SUPABASE_QUICK_FLOW_AMOUNT:-1}" \
-RUN_SUPABASE_BOX_CYCLE="${RUN_SUPABASE_BOX_CYCLE:-0}" \
 A_EMAIL="${A_EMAIL}" \
 A_PASSWORD="${A_PASSWORD}" \
 B_EMAIL="${B_EMAIL}" \
@@ -82,7 +78,7 @@ B_PASSWORD="${B_PASSWORD}" \
 SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
 SUPABASE_ANON_KEY="${SUPABASE_ANON_KEY:-}" \
 SUPABASE_URL="${SUPABASE_URL:-}" \
-zsh "${REPO_ROOT}/scripts/release_gate.sh"
+zsh "${REPO_ROOT}/scripts/release_gate_quick.sh"
 
 echo "${target_sha}" > "${STAMP_FILE}"
 echo "[pre-push] release_gate passed; continuing push to main."

@@ -88,6 +88,16 @@ if [ "${RUN_SUPABASE_SMOKE:-0}" = "1" ]; then
       BOX_ID="${SUPABASE_UAT_TICKET_BOX_ID:-1}" \
       "$ROOT/scripts/supabase_uat_ticket_update_e2e.sh"
 
+    if [ "${RUN_SUPABASE_UAT_BACKLOG_GATE:-0}" = "1" ]; then
+      echo "== Supabase UAT backlog gate (no open critical/high) =="
+      OPERATOR_EMAIL="$A_EMAIL" OPERATOR_PASSWORD="$A_PASSWORD" \
+        SUPABASE_ANON_KEY="$SUPABASE_API_KEY" \
+        UAT_GATE_MAX_ROWS="${UAT_GATE_MAX_ROWS:-200}" \
+        "$ROOT/scripts/supabase_uat_backlog_gate.sh"
+    else
+      echo "== Supabase UAT backlog gate skipped (RUN_SUPABASE_UAT_BACKLOG_GATE=0) =="
+    fi
+
     echo "== Supabase KPI export e2e =="
       OPERATOR_EMAIL="$A_EMAIL" OPERATOR_PASSWORD="$A_PASSWORD" \
       CUSTOMER_EMAIL="$B_EMAIL" CUSTOMER_PASSWORD="$B_PASSWORD" \

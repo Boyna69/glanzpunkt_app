@@ -138,7 +138,10 @@ samples, guidance on mobile development, and a full API reference.
     `SUPABASE_QUICK_FLOW_BOX_IDS='1 2 3 4 5 6'`
   - optional full 1-6 box cycle:
     `RUN_SUPABASE_BOX_CYCLE=1`
-  - optional legal/support live check:
+  - optional UAT backlog hard gate (fails on open critical/high):
+    `RUN_SUPABASE_UAT_BACKLOG_GATE=1`
+    - scan window size (1..200): `UAT_GATE_MAX_ROWS=200`
+- optional legal/support live check:
     `RUN_LEGAL_SUPPORT_CHECK=1`
 - One-command release gate (analyze + tests + Supabase security + cleaning + operator KPI export + box cycle):
   `scripts/release_gate.sh`
@@ -147,6 +150,12 @@ samples, guidance on mobile development, and a full API reference.
     (alternativ legacy: `SUPABASE_ANON_KEY=...`)
   - optional lighter run without full box cycle:
     `RUN_SUPABASE_BOX_CYCLE=0 ... scripts/release_gate.sh`
+- Quick release gate profile (default for local pre-push/CI):
+  `scripts/release_gate_quick.sh`
+  - runs without quick-flow and without full 1-6 box cycle
+- Full release gate profile (deepest runtime check):
+  `scripts/release_gate_full.sh`
+  - forces quick-flow and full 1-6 box cycle
 - Full box cycle E2E script (reserve -> activate -> stop -> status for box 1-6):
   `scripts/supabase_box_cycle_e2e.sh`
   - example:
@@ -181,8 +190,7 @@ samples, guidance on mobile development, and a full API reference.
   - install once: `scripts/install_git_hooks.sh`
   - credentials file template: `.release-gate.env.example`
   - create local file (ignored by git): `.release-gate.env`
-  - behavior: pushing to `main` runs `scripts/release_gate.sh` and blocks push on failure
-  - pre-push defaults: `RUN_SUPABASE_BOX_CYCLE=0` and `RUN_SUPABASE_QUICK_FLOW_CHECK=0` (faster/less flaky)
+  - behavior: pushing to `main` runs `scripts/release_gate_quick.sh` and blocks push on failure
   - pre-push always includes UAT ticket status/owner E2E (`scripts/supabase_uat_ticket_update_e2e.sh`)
   - emergency bypass: `SKIP_RELEASE_GATE=1 git push` (not recommended)
 - RPC contract check (verifies deployed RPC names/permissions, no dangerous writes):
@@ -192,6 +200,12 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/supabase_operator_action_log_e2e.sh`
 - UAT ticket status/owner E2E (operator allowed, customer deny):
   `scripts/supabase_uat_ticket_update_e2e.sh`
+- UAT backlog gate (no open critical/high UAT tickets in latest window):
+  `scripts/supabase_uat_backlog_gate.sh`
+- UAT E2E cleanup helper (stale test tickets, default dry-run):
+  `scripts/supabase_uat_cleanup_e2e_tickets.sh`
+  - apply mode:
+    `APPLY=1 OPERATOR_EMAIL=... OPERATOR_PASSWORD=... SUPABASE_PUBLISHABLE_KEY=... scripts/supabase_uat_cleanup_e2e_tickets.sh`
 - KPI export E2E (operator allowed for day/week/month, customer deny):
   `scripts/supabase_operator_kpi_export_e2e.sh`
 - Operator threshold settings E2E (owner get/set allowed, customer deny):

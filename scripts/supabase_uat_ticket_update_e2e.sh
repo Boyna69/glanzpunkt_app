@@ -155,6 +155,17 @@ CU_OWNER="$(curl -sS -X POST "$BASE/rest/v1/rpc/assign_uat_ticket_owner" "${cu_h
 echo "$CU_OWNER"
 expect_forbidden "$CU_OWNER" "customer assign_uat_ticket_owner"
 
+echo "== Operator closes ticket for clean test state =="
+CLOSE_PAYLOAD="$(curl -sS -X POST "$BASE/rest/v1/rpc/set_uat_ticket_status" "${op_hdr[@]}" -d "{\"ticket_id\":$TICKET_ID,\"uat_status\":\"closed\",\"note\":\"E2E cleanup close\"}")"
+echo "$CLOSE_PAYLOAD"
+assert_no_error_code "$CLOSE_PAYLOAD" "set_uat_ticket_status (cleanup close)"
+if ! echo "$CLOSE_PAYLOAD" | grep -Eq "\"ticket_id\"[[:space:]]*:[[:space:]]*$TICKET_ID"; then
+  fail "cleanup close response does not contain ticket_id"
+fi
+if ! echo "$CLOSE_PAYLOAD" | grep -Eq '"uat_status"[[:space:]]*:[[:space:]]*"closed"'; then
+  fail "cleanup close response does not contain closed"
+fi
+
 echo
 
 echo "UAT TICKET UPDATE E2E PASSED"

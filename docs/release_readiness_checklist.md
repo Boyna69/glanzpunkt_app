@@ -93,6 +93,7 @@ Release is GO only if all of the following are true:
 
 - [x] latest `release_gate.sh` run is fully green.
 - [ ] no critical or high severity bugs open.
+- [ ] UAT backlog gate passes (`scripts/supabase_uat_backlog_gate.sh` or `RUN_SUPABASE_UAT_BACKLOG_GATE=1`).
 - [ ] production Supabase migration set matches repository SQL files.
 - [x] operator/customer separation validated on production-like data.
 

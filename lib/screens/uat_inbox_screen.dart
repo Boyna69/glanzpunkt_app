@@ -55,6 +55,26 @@ class UatInboxItem {
   }
 }
 
+class _UatTicketTimelineEvent {
+  final int id;
+  final String actionName;
+  final String actionStatus;
+  final String actor;
+  final String source;
+  final String? note;
+  final DateTime createdAt;
+
+  const _UatTicketTimelineEvent({
+    required this.id,
+    required this.actionName,
+    required this.actionStatus,
+    required this.actor,
+    required this.source,
+    required this.note,
+    required this.createdAt,
+  });
+}
+
 class UatInboxScreen extends StatefulWidget {
   final OpsMaintenanceService? maintenanceService;
 
@@ -66,6 +86,7 @@ class UatInboxScreen extends StatefulWidget {
 
 class _UatInboxScreenState extends State<UatInboxScreen> {
   static const String _defaultTargetBuild = 'current';
+  static const String _ownerFilterUnassignedKey = '__unassigned__';
 
   late final OpsMaintenanceService _opsMaintenance;
   final TextEditingController _searchController = TextEditingController();
@@ -77,7 +98,9 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
   String? _warning;
   UatInboxStatus? _statusFilter;
   UatInboxSeverity? _severityFilter;
+  String? _ownerFilter;
   List<UatInboxItem> _items = const <UatInboxItem>[];
+  List<OpsOperatorActionItem> _rawRows = const <OpsOperatorActionItem>[];
 
   @override
   void initState() {
@@ -125,6 +148,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         _isLoading = false;
         _usingFallbackFeed = false;
         _items = const <UatInboxItem>[];
+        _rawRows = const <OpsOperatorActionItem>[];
         _warning = 'UAT Inbox ist nur mit Betreiber-Session verfuegbar.';
       });
       return;
@@ -157,6 +181,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         return;
       }
       setState(() {
+        _rawRows = rows;
         _items = _buildUatItems(rows);
         _usingFallbackFeed = usingFallback;
         _warning = null;
@@ -167,6 +192,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
       }
       setState(() {
         _items = const <UatInboxItem>[];
+        _rawRows = const <OpsOperatorActionItem>[];
         _usingFallbackFeed = false;
         _warning = 'UAT Inbox konnte nicht geladen werden. ($e)';
       });
@@ -190,6 +216,11 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
     if (_severityFilter != null) {
       rows = rows.where((item) => item.severity == _severityFilter).toList();
     }
+    if (_ownerFilter != null) {
+      rows = rows
+          .where((item) => _matchesOwnerFilter(item, _ownerFilter!))
+          .toList();
+    }
     final query = _searchController.text.trim().toLowerCase();
     if (query.isNotEmpty) {
       rows = rows.where((item) {
@@ -202,6 +233,26 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
       }).toList();
     }
     return rows;
+  }
+
+  bool _matchesOwnerFilter(UatInboxItem item, String ownerFilter) {
+    final normalizedOwnerFilter = ownerFilter.trim().toLowerCase();
+    final normalizedOwner = item.owner.trim().toLowerCase();
+    if (normalizedOwnerFilter == _ownerFilterUnassignedKey) {
+      return normalizedOwner.isEmpty || normalizedOwner == '-';
+    }
+    return normalizedOwner == normalizedOwnerFilter;
+  }
+
+  List<String> _availableOwners() {
+    final owners =
+        _items
+            .map((item) => item.owner.trim())
+            .where((owner) => owner.isNotEmpty && owner != '-')
+            .toSet()
+            .toList()
+          ..sort((a, b) => a.toLowerCase().compareTo(b.toLowerCase()));
+    return owners;
   }
 
   bool _isOpenStatus(UatInboxStatus status) {
@@ -739,7 +790,176 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         ),
       );
     }
+    items.sort((a, b) {
+      final byTime = b.createdAt.compareTo(a.createdAt);
+      if (byTime != 0) {
+        return byTime;
+      }
+      return b.ticketId.compareTo(a.ticketId);
+    });
     return items;
+  }
+
+  List<_UatTicketTimelineEvent> _buildTimelineEvents(int ticketId) {
+    final events = <_UatTicketTimelineEvent>[];
+    for (final row in _rawRows) {
+      final rowTicketId = _extractTicketIdFromDetails(row.details) ?? row.id;
+      if (rowTicketId != ticketId) {
+        continue;
+      }
+      final actor = (row.actorEmail?.trim().isNotEmpty ?? false)
+          ? row.actorEmail!.trim()
+          : row.actorId;
+      events.add(
+        _UatTicketTimelineEvent(
+          id: row.id,
+          actionName: row.actionName,
+          actionStatus: row.actionStatus,
+          actor: actor,
+          source: row.source,
+          note: _firstText(row.details, <String>[
+            'note',
+            'summary',
+            'message',
+            'description',
+          ]),
+          createdAt: row.createdAt,
+        ),
+      );
+    }
+    events.sort((a, b) {
+      final byTime = b.createdAt.compareTo(a.createdAt);
+      if (byTime != 0) {
+        return byTime;
+      }
+      return b.id.compareTo(a.id);
+    });
+    return events;
+  }
+
+  Future<void> _openTicketDetails(UatInboxItem item) async {
+    final timeline = _buildTimelineEvents(item.ticketId);
+    if (!mounted) {
+      return;
+    }
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: DraggableScrollableSheet(
+            expand: false,
+            initialChildSize: 0.78,
+            minChildSize: 0.4,
+            maxChildSize: 0.95,
+            builder: (context, scrollController) {
+              return ListView(
+                controller: scrollController,
+                padding: const EdgeInsets.all(16),
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              item.id,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              item.summary,
+                              style: const TextStyle(fontSize: 16),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        tooltip: 'Schliessen',
+                        onPressed: () => Navigator.of(sheetContext).pop(),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      Chip(label: Text('Bereich ${item.area}')),
+                      Chip(label: Text('Owner ${item.owner}')),
+                      Chip(label: Text('Build ${item.targetBuild}')),
+                      Chip(label: Text('Status ${_statusLabel(item.status)}')),
+                      Chip(
+                        label: Text(
+                          'Severity ${_severityLabel(item.severity)}',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          Future.microtask(
+                            () => _openSetTicketStatusDialog(item),
+                          );
+                        },
+                        icon: const Icon(Icons.flag_outlined),
+                        label: const Text('Status setzen'),
+                      ),
+                      const SizedBox(width: 8),
+                      OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.of(sheetContext).pop();
+                          Future.microtask(() => _openAssignOwnerDialog(item));
+                        },
+                        icon: const Icon(Icons.person_outline),
+                        label: const Text('Owner setzen'),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  const Text(
+                    'Verlauf',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: 8),
+                  if (timeline.isEmpty)
+                    const Card(
+                      child: ListTile(
+                        leading: Icon(Icons.history_toggle_off),
+                        title: Text('Keine Verlaufseintraege gefunden'),
+                      ),
+                    ),
+                  ...timeline.map((event) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(_humanize(event.actionName)),
+                        subtitle: Text(
+                          'Status: ${event.actionStatus}\n'
+                          'Akteur: ${event.actor}\n'
+                          'Quelle: ${event.source}\n'
+                          'Zeit: ${event.createdAt.toLocal().toIso8601String()}'
+                          '${event.note == null ? '' : '\nNotiz: ${event.note}'}',
+                        ),
+                      ),
+                    );
+                  }),
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
   }
 
   UatInboxItem _mapFromOperatorAction(OpsOperatorActionItem action) {
@@ -934,6 +1154,34 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
     }
   }
 
+  Widget _buildStatusBadge(UatInboxStatus status) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _statusColor(status).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        _statusLabel(status),
+        style: TextStyle(color: _statusColor(status)),
+      ),
+    );
+  }
+
+  Widget _buildSeverityBadge(UatInboxSeverity severity) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: _severityColor(severity).withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        _severityLabel(severity),
+        style: TextStyle(color: _severityColor(severity)),
+      ),
+    );
+  }
+
   int _countByStatus(UatInboxStatus status) {
     return _items.where((item) => item.status == status).length;
   }
@@ -955,6 +1203,11 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final currentOperatorEmail = context.select<AuthService, String>(
+      (auth) => auth.email.trim(),
+    );
+    final availableOwners = _availableOwners();
+    final normalizedCurrentOperatorEmail = currentOperatorEmail.toLowerCase();
     final visibleItems = _filteredItems();
     return Scaffold(
       appBar: AppBar(
@@ -1142,6 +1395,64 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                           }),
                         ],
                       ),
+                      const SizedBox(height: 10),
+                      const Text('Owner-Filter'),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            key: const ValueKey('uat_owner_all'),
+                            label: const Text('all'),
+                            selected: _ownerFilter == null,
+                            onSelected: (_) {
+                              setState(() {
+                                _ownerFilter = null;
+                              });
+                            },
+                          ),
+                          if (normalizedCurrentOperatorEmail.isNotEmpty)
+                            ChoiceChip(
+                              key: const ValueKey('uat_owner_mine'),
+                              label: const Text('mine'),
+                              selected:
+                                  _ownerFilter != null &&
+                                  _ownerFilter!.toLowerCase() ==
+                                      normalizedCurrentOperatorEmail,
+                              onSelected: (_) {
+                                setState(() {
+                                  _ownerFilter = currentOperatorEmail;
+                                });
+                              },
+                            ),
+                          ChoiceChip(
+                            key: const ValueKey('uat_owner_unassigned'),
+                            label: const Text('unassigned'),
+                            selected: _ownerFilter == _ownerFilterUnassignedKey,
+                            onSelected: (_) {
+                              setState(() {
+                                _ownerFilter = _ownerFilterUnassignedKey;
+                              });
+                            },
+                          ),
+                          ...availableOwners.map((owner) {
+                            return ChoiceChip(
+                              key: ValueKey('uat_owner_${owner.toLowerCase()}'),
+                              label: Text(owner),
+                              selected:
+                                  _ownerFilter != null &&
+                                  _ownerFilter!.toLowerCase() ==
+                                      owner.toLowerCase(),
+                              onSelected: (_) {
+                                setState(() {
+                                  _ownerFilter = owner;
+                                });
+                              },
+                            );
+                          }),
+                        ],
+                      ),
                     ],
                   ),
                 ),
@@ -1177,78 +1488,50 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
+                    onTap: () => _openTicketDetails(item),
                     title: Text('${item.id} - ${item.summary}'),
-                    subtitle: Text(
-                      'Bereich: ${item.area}\n'
-                      'Owner: ${item.owner} | Build: ${item.targetBuild}\n'
-                      'Zeit: ${item.createdAt.toLocal().toIso8601String()}',
-                    ),
-                    trailing: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                    subtitle: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _statusColor(
-                              item.status,
-                            ).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            _statusLabel(item.status),
-                            style: TextStyle(color: _statusColor(item.status)),
-                          ),
+                        Text(
+                          'Bereich: ${item.area}\n'
+                          'Owner: ${item.owner} | Build: ${item.targetBuild}\n'
+                          'Zeit: ${item.createdAt.toLocal().toIso8601String()}',
                         ),
                         const SizedBox(height: 6),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _severityColor(
-                              item.severity,
-                            ).withValues(alpha: 0.2),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            _severityLabel(item.severity),
-                            style: TextStyle(
-                              color: _severityColor(item.severity),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        PopupMenuButton<String>(
-                          key: ValueKey('uat_ticket_actions_${item.ticketId}'),
-                          tooltip: 'Ticket-Aktionen',
-                          onSelected: (value) {
-                            if (value == 'set_status') {
-                              _openSetTicketStatusDialog(item);
-                              return;
-                            }
-                            if (value == 'set_owner') {
-                              _openAssignOwnerDialog(item);
-                            }
-                          },
-                          itemBuilder: (context) => const [
-                            PopupMenuItem<String>(
-                              value: 'set_status',
-                              child: Text('Status setzen'),
-                            ),
-                            PopupMenuItem<String>(
-                              value: 'set_owner',
-                              child: Text('Owner setzen'),
-                            ),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 6,
+                          children: [
+                            _buildStatusBadge(item.status),
+                            _buildSeverityBadge(item.severity),
                           ],
-                          child: const Icon(Icons.more_vert),
                         ),
                       ],
+                    ),
+                    trailing: PopupMenuButton<String>(
+                      key: ValueKey('uat_ticket_actions_${item.ticketId}'),
+                      tooltip: 'Ticket-Aktionen',
+                      onSelected: (value) {
+                        if (value == 'set_status') {
+                          _openSetTicketStatusDialog(item);
+                          return;
+                        }
+                        if (value == 'set_owner') {
+                          _openAssignOwnerDialog(item);
+                        }
+                      },
+                      itemBuilder: (context) => const [
+                        PopupMenuItem<String>(
+                          value: 'set_status',
+                          child: Text('Status setzen'),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'set_owner',
+                          child: Text('Owner setzen'),
+                        ),
+                      ],
+                      child: const Icon(Icons.more_vert),
                     ),
                   ),
                 );
