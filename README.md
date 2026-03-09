@@ -193,6 +193,7 @@ samples, guidance on mobile development, and a full API reference.
   - credentials file template: `.release-gate.env.example`
   - create local file (ignored by git): `.release-gate.env`
   - behavior: pushing to `main` runs `scripts/release_gate_quick.sh` and blocks push on failure
+  - pre-push runs secret hygiene check (`scripts/security_secrets_check.sh`)
   - pre-push always includes UAT ticket status/owner E2E (`scripts/supabase_uat_ticket_update_e2e.sh`)
   - pre-push enforces UAT backlog hard gate (`RUN_SUPABASE_UAT_BACKLOG_GATE=1`)
   - emergency bypass: `SKIP_RELEASE_GATE=1 git push` (not recommended)
@@ -213,6 +214,8 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/supabase_operator_kpi_export_e2e.sh`
 - Operator threshold settings E2E (owner get/set allowed, customer deny):
   `scripts/supabase_operator_threshold_settings_e2e.sh`
+- Secret hygiene check (blocks committed keys/tokens and non-placeholder env template values):
+  `scripts/security_secrets_check.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

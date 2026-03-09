@@ -43,6 +43,9 @@ if [ "${SKIP_RELEASE_GATE:-0}" = "1" ]; then
   exit 0
 fi
 
+echo "[pre-push] Running secret hygiene check..."
+bash "${REPO_ROOT}/scripts/security_secrets_check.sh"
+
 if [ -f "${STAMP_FILE}" ] && [ "$(cat "${STAMP_FILE}")" = "${target_sha}" ]; then
   echo "[pre-push] release_gate already passed for commit ${target_sha}."
   exit 0

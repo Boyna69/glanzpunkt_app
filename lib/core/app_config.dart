@@ -28,13 +28,12 @@ class AppConfig {
 
   static const String supabasePublishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
-    defaultValue: 'sb_publishable_V_ZgLZBRZqgUmseBvp0vMg_lB4oKBKy',
+    defaultValue: '',
   );
 
   static const String supabaseAnonKey = String.fromEnvironment(
     'SUPABASE_ANON_KEY',
-    defaultValue:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVjbnZ6cnBjamtwYWx0dXlsdmJ2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzE1OTA3MDksImV4cCI6MjA4NzE2NjcwOX0.mClCEPe0P6NeUZB4quEWK1cHYdYrYZnt9RU1psVbQxY',
+    defaultValue: '',
   );
 
   static const String legalPrivacyUrl = String.fromEnvironment(

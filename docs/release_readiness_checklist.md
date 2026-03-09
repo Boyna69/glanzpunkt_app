@@ -33,6 +33,8 @@ Required security state:
 
 ## 3. Security Regression Gate
 
+- [ ] Supabase keys and test-account passwords rotated after public-repo exposure.
+- [ ] no real credentials in repository files (`scripts/security_secrets_check.sh` passes).
 - [x] A/B isolation checks pass.
 - [x] RPC contract check passes (deployed names + permission expectations).
 - [x] role access check passes (customer denied, operator allowed).
