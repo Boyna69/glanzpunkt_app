@@ -35,6 +35,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/store_upload_dry_run_checklist.md`
 - Internal test distribution (without Store release):
   `docs/internal_test_distribution.md`
+- Internal tester install guide (DE):
+  `docs/internal_tester_install_guide_de.md`
 - Internal UAT runbook + bug triage templates:
   `docs/internal_uat_runbook.md`
 - Backend mode switch via Dart define:
