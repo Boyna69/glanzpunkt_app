@@ -34,6 +34,7 @@ jobs:
       SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
       RUN_SUPABASE_BOX_CYCLE: "0"
+      RUN_SUPABASE_UAT_BACKLOG_GATE: "1"
       RUN_LEGAL_SUPPORT_CHECK: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.run_legal_support_check == 'true' && '1' || '0' }}
       LEGAL_PRIVACY_URL: ${{ vars.LEGAL_PRIVACY_URL }}
       LEGAL_IMPRINT_URL: ${{ vars.LEGAL_IMPRINT_URL }}

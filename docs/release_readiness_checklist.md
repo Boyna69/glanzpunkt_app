@@ -113,6 +113,7 @@ Latest gate evidence:
 
 - [x] GitHub Actions workflow for release smoke gate exists:
   `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/release-gate.yml`
+  - beinhaltet verpflichtend den UAT-Backlog-Gate (`RUN_SUPABASE_UAT_BACKLOG_GATE=1`)
   - optional manual input: `run_legal_support_check=true` fuer Live-URL-Check
 - [x] GitHub Actions workflow for DB drift/parity exists:
   `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/supabase-db-parity.yml`

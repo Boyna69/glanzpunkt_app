@@ -141,7 +141,7 @@ samples, guidance on mobile development, and a full API reference.
   - optional UAT backlog hard gate (fails on open critical/high):
     `RUN_SUPABASE_UAT_BACKLOG_GATE=1`
     - scan window size (1..200): `UAT_GATE_MAX_ROWS=200`
-- optional legal/support live check:
+  - optional legal/support live check:
     `RUN_LEGAL_SUPPORT_CHECK=1`
 - One-command release gate (analyze + tests + Supabase security + cleaning + operator KPI export + box cycle):
   `scripts/release_gate.sh`
@@ -150,9 +150,10 @@ samples, guidance on mobile development, and a full API reference.
     (alternativ legacy: `SUPABASE_ANON_KEY=...`)
   - optional lighter run without full box cycle:
     `RUN_SUPABASE_BOX_CYCLE=0 ... scripts/release_gate.sh`
-- Quick release gate profile (default for local pre-push/CI):
+- Quick release gate profile (default for local pre-push):
   `scripts/release_gate_quick.sh`
   - runs without quick-flow and without full 1-6 box cycle
+  - local default: UAT backlog gate aus (`RUN_SUPABASE_UAT_BACKLOG_GATE=0`)
 - Full release gate profile (deepest runtime check):
   `scripts/release_gate_full.sh`
   - forces quick-flow and full 1-6 box cycle
@@ -180,6 +181,7 @@ samples, guidance on mobile development, and a full API reference.
   - if `SUPABASE_DB_URL` is not available (e.g. free plan), the CI DB parity workflow is skipped and API-level `release_gate.sh` remains the required gate
 - CI workflows:
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/release-gate.yml`
+    - erzwingt `RUN_SUPABASE_UAT_BACKLOG_GATE=1` (kein offenes critical/high UAT im CI)
   - `/Users/fynn-olegottsch/glanzpunkt_app/.github/workflows/supabase-db-parity.yml`
   - required repository secrets:
     `OPERATOR_EMAIL`, `OPERATOR_PASSWORD`, `CUSTOMER_EMAIL`, `CUSTOMER_PASSWORD`,
