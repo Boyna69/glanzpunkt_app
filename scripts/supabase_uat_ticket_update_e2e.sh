@@ -127,7 +127,10 @@ assert_no_error_code "$OWNER_PAYLOAD" "assign_uat_ticket_owner"
 if ! echo "$OWNER_PAYLOAD" | grep -Eq "\"ticket_id\"[[:space:]]*:[[:space:]]*$TICKET_ID"; then
   fail "assign_uat_ticket_owner response does not contain ticket_id"
 fi
-if ! echo "$OWNER_PAYLOAD" | grep -Eq "\"owner_email\"[[:space:]]*:[[:space:]]*\"$OPERATOR_EMAIL\""; then
+OWNER_PAYLOAD_LC="$(echo "$OWNER_PAYLOAD" | tr '[:upper:]' '[:lower:]')"
+OPERATOR_EMAIL_LC="$(echo "$OPERATOR_EMAIL" | tr '[:upper:]' '[:lower:]')"
+OWNER_EMAIL_ACTUAL="$(echo "$OWNER_PAYLOAD_LC" | sed -n 's/.*"owner_email"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p')"
+if [ -z "$OWNER_EMAIL_ACTUAL" ] || [ "$OWNER_EMAIL_ACTUAL" != "$OPERATOR_EMAIL_LC" ]; then
   fail "assign_uat_ticket_owner response does not contain expected owner_email"
 fi
 
