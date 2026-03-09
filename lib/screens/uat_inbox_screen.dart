@@ -35,22 +35,51 @@ class UatInboxItem {
 }
 
 class UatInboxScreen extends StatefulWidget {
-  const UatInboxScreen({super.key});
+  final OpsMaintenanceService? maintenanceService;
+
+  const UatInboxScreen({super.key, this.maintenanceService});
 
   @override
   State<UatInboxScreen> createState() => _UatInboxScreenState();
 }
 
 class _UatInboxScreenState extends State<UatInboxScreen> {
+  static const String _defaultTargetBuild = 'current';
+
   late final OpsMaintenanceService _opsMaintenance;
+  final TextEditingController _searchController = TextEditingController();
+
   bool _isLoading = false;
+  bool _isCreatingEntry = false;
   bool _usingFallbackFeed = false;
+  bool _showOnlyOpen = false;
   String? _warning;
+  UatInboxStatus? _statusFilter;
+  UatInboxSeverity? _severityFilter;
   List<UatInboxItem> _items = const <UatInboxItem>[];
 
   @override
   void initState() {
     super.initState();
+    _opsMaintenance = widget.maintenanceService ?? _createOpsService();
+    _searchController.addListener(() {
+      if (!mounted) {
+        return;
+      }
+      setState(() {});
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _reloadInbox();
+    });
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  OpsMaintenanceService _createOpsService() {
     final apiKey = AppConfig.supabaseApiKey;
     final client = createBackendHttpClient(
       defaultHeaders: <String, String>{
@@ -61,10 +90,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         'x-client-info': 'glanzpunkt_app/1.0',
       },
     );
-    _opsMaintenance = OpsMaintenanceService(httpClient: client);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _reloadInbox();
-    });
+    return OpsMaintenanceService(httpClient: client);
   }
 
   Future<void> _reloadInbox() async {
@@ -93,7 +119,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
       var rows = await _opsMaintenance.fetchOperatorActions(
         baseUrl: baseUrl,
         jwt: jwt,
-        maxRows: 40,
+        maxRows: 60,
         searchQuery: 'uat',
       );
       var usingFallback = false;
@@ -101,7 +127,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         rows = await _opsMaintenance.fetchOperatorActions(
           baseUrl: baseUrl,
           jwt: jwt,
-          maxRows: 40,
+          maxRows: 60,
         );
         usingFallback = true;
       }
@@ -129,6 +155,296 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
           _isLoading = false;
         });
       }
+    }
+  }
+
+  List<UatInboxItem> _filteredItems() {
+    var rows = _items;
+    if (_showOnlyOpen) {
+      rows = rows.where((item) => _isOpenStatus(item.status)).toList();
+    }
+    if (_statusFilter != null) {
+      rows = rows.where((item) => item.status == _statusFilter).toList();
+    }
+    if (_severityFilter != null) {
+      rows = rows.where((item) => item.severity == _severityFilter).toList();
+    }
+    final query = _searchController.text.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      rows = rows.where((item) {
+        final haystack =
+            '${item.id} ${item.summary} ${item.area} ${item.owner} '
+                    '${item.targetBuild} ${_statusLabel(item.status)} '
+                    '${_severityLabel(item.severity)}'
+                .toLowerCase();
+        return haystack.contains(query);
+      }).toList();
+    }
+    return rows;
+  }
+
+  bool _isOpenStatus(UatInboxStatus status) {
+    return status == UatInboxStatus.open ||
+        status == UatInboxStatus.inProgress ||
+        status == UatInboxStatus.retest;
+  }
+
+  Future<void> _openCreateUatEntryDialog() async {
+    if (_isCreatingEntry || !mounted) {
+      return;
+    }
+    final auth = context.read<AuthService>();
+    final jwt = auth.backendJwt;
+    if (!auth.hasOperatorAccess || jwt == null || jwt.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Nur mit gueltiger Betreiber-Session moeglich.'),
+        ),
+      );
+      return;
+    }
+    final baseUrl = context.read<EnvironmentService>().activeBaseUrl;
+    final summaryController = TextEditingController();
+    final areaController = TextEditingController(text: 'operator_dashboard');
+    final buildController = TextEditingController(text: _defaultTargetBuild);
+    final boxIdController = TextEditingController();
+    var selectedStatus = UatInboxStatus.open;
+    var selectedSeverity = UatInboxSeverity.medium;
+    String? validationError;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: const Text('UAT-Eintrag erfassen'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  TextField(
+                    key: const ValueKey('uat_create_summary'),
+                    controller: summaryController,
+                    maxLines: 2,
+                    decoration: const InputDecoration(
+                      labelText: 'Kurzbeschreibung',
+                      hintText: 'z. B. TopUp-Fehler bei Kunde B',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    key: const ValueKey('uat_create_area'),
+                    controller: areaController,
+                    decoration: const InputDecoration(
+                      labelText: 'Bereich',
+                      hintText: 'z. B. wallet, operator_dashboard',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    key: const ValueKey('uat_create_target_build'),
+                    controller: buildController,
+                    decoration: const InputDecoration(
+                      labelText: 'Target Build',
+                      hintText: 'z. B. 1.0.3+4',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  TextField(
+                    key: const ValueKey('uat_create_box_id'),
+                    controller: boxIdController,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly,
+                    ],
+                    decoration: const InputDecoration(
+                      labelText: 'Box-ID (optional)',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<UatInboxStatus>(
+                    key: const ValueKey('uat_create_status'),
+                    initialValue: selectedStatus,
+                    items: UatInboxStatus.values.map((status) {
+                      return DropdownMenuItem<UatInboxStatus>(
+                        value: status,
+                        child: Text(_statusLabel(status)),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'UAT-Status',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        selectedStatus = value;
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  DropdownButtonFormField<UatInboxSeverity>(
+                    key: const ValueKey('uat_create_severity'),
+                    initialValue: selectedSeverity,
+                    items: UatInboxSeverity.values.map((severity) {
+                      return DropdownMenuItem<UatInboxSeverity>(
+                        value: severity,
+                        child: Text(_severityLabel(severity)),
+                      );
+                    }).toList(),
+                    decoration: const InputDecoration(
+                      labelText: 'Severity',
+                      border: OutlineInputBorder(),
+                    ),
+                    onChanged: (value) {
+                      if (value == null) {
+                        return;
+                      }
+                      setDialogState(() {
+                        selectedSeverity = value;
+                      });
+                    },
+                  ),
+                  if (validationError != null) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      validationError!,
+                      style: const TextStyle(color: Colors.orangeAccent),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Abbrechen'),
+              ),
+              FilledButton(
+                key: const ValueKey('uat_create_save'),
+                onPressed: () {
+                  final summary = summaryController.text.trim();
+                  if (summary.isEmpty) {
+                    setDialogState(() {
+                      validationError = 'Kurzbeschreibung ist erforderlich.';
+                    });
+                    return;
+                  }
+                  final boxRaw = boxIdController.text.trim();
+                  if (boxRaw.isNotEmpty && int.tryParse(boxRaw) == null) {
+                    setDialogState(() {
+                      validationError = 'Box-ID muss eine Zahl sein.';
+                    });
+                    return;
+                  }
+                  Navigator.pop(context, true);
+                },
+                child: const Text('Speichern'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    final summary = summaryController.text.trim();
+    final area = areaController.text.trim();
+    final targetBuild = buildController.text.trim();
+    final boxId = int.tryParse(boxIdController.text.trim());
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    setState(() {
+      _isCreatingEntry = true;
+    });
+
+    try {
+      await _opsMaintenance.logUatAction(
+        baseUrl: baseUrl,
+        jwt: jwt,
+        actionName: 'uat_manual_report',
+        actionStatus: _actionStatusForUatStatus(selectedStatus),
+        summary: summary,
+        area: area.isEmpty ? 'operator_dashboard' : area,
+        uatStatus: _toOpsUatStatus(selectedStatus),
+        severity: _toOpsUatSeverity(selectedSeverity),
+        boxId: boxId,
+        targetBuild: targetBuild.isEmpty ? _defaultTargetBuild : targetBuild,
+        details: const <String, dynamic>{'source_screen': 'uat_inbox'},
+      );
+      await _reloadInbox();
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('UAT-Eintrag gespeichert.')));
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('UAT-Eintrag konnte nicht gespeichert werden: $e'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingEntry = false;
+        });
+      }
+    }
+  }
+
+  String _actionStatusForUatStatus(UatInboxStatus status) {
+    switch (status) {
+      case UatInboxStatus.open:
+        return 'failed';
+      case UatInboxStatus.inProgress:
+      case UatInboxStatus.retest:
+        return 'partial';
+      case UatInboxStatus.fixed:
+      case UatInboxStatus.closed:
+        return 'success';
+    }
+  }
+
+  OpsUatStatus _toOpsUatStatus(UatInboxStatus status) {
+    switch (status) {
+      case UatInboxStatus.open:
+        return OpsUatStatus.open;
+      case UatInboxStatus.inProgress:
+        return OpsUatStatus.inProgress;
+      case UatInboxStatus.fixed:
+        return OpsUatStatus.fixed;
+      case UatInboxStatus.retest:
+        return OpsUatStatus.retest;
+      case UatInboxStatus.closed:
+        return OpsUatStatus.closed;
+    }
+  }
+
+  OpsUatSeverity _toOpsUatSeverity(UatInboxSeverity severity) {
+    switch (severity) {
+      case UatInboxSeverity.critical:
+        return OpsUatSeverity.critical;
+      case UatInboxSeverity.high:
+        return OpsUatSeverity.high;
+      case UatInboxSeverity.medium:
+        return OpsUatSeverity.medium;
+      case UatInboxSeverity.low:
+        return OpsUatSeverity.low;
     }
   }
 
@@ -344,10 +660,16 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final visibleItems = _filteredItems();
     return Scaffold(
       appBar: AppBar(
         title: const Text('UAT Inbox'),
         actions: [
+          IconButton(
+            tooltip: 'UAT-Eintrag erfassen',
+            onPressed: _isCreatingEntry ? null : _openCreateUatEntryDialog,
+            icon: const Icon(Icons.add_task_outlined),
+          ),
           IconButton(
             tooltip: 'Neu laden',
             onPressed: _isLoading ? null : _reloadInbox,
@@ -399,6 +721,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                     spacing: 8,
                     runSpacing: 8,
                     children: [
+                      Chip(label: Text('total ${_items.length}')),
                       Chip(
                         label: Text(
                           'open ${_countByStatus(UatInboxStatus.open)}',
@@ -419,11 +742,115 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                           'closed ${_countByStatus(UatInboxStatus.closed)}',
                         ),
                       ),
+                      Chip(label: Text('visible ${visibleItems.length}')),
                     ],
                   ),
                 ),
               ),
               const SizedBox(height: 8),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.search),
+                  title: TextField(
+                    key: const ValueKey('uat_search_field'),
+                    controller: _searchController,
+                    decoration: const InputDecoration(
+                      hintText: 'Suche in ID, Summary, Area, Owner ...',
+                      border: InputBorder.none,
+                    ),
+                  ),
+                  trailing: _searchController.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Suche leeren',
+                          icon: const Icon(Icons.clear),
+                          onPressed: () {
+                            _searchController.clear();
+                            setState(() {});
+                          },
+                        ),
+                ),
+              ),
+              Card(
+                child: SwitchListTile(
+                  value: _showOnlyOpen,
+                  onChanged: (value) {
+                    setState(() {
+                      _showOnlyOpen = value;
+                    });
+                  },
+                  title: const Text('Nur offene Punkte'),
+                  subtitle: const Text('open, in_progress, retest'),
+                ),
+              ),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Status-Filter'),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('all'),
+                            selected: _statusFilter == null,
+                            onSelected: (_) {
+                              setState(() {
+                                _statusFilter = null;
+                              });
+                            },
+                          ),
+                          ...UatInboxStatus.values.map((status) {
+                            return ChoiceChip(
+                              label: Text(_statusLabel(status)),
+                              selected: _statusFilter == status,
+                              onSelected: (_) {
+                                setState(() {
+                                  _statusFilter = status;
+                                });
+                              },
+                            );
+                          }),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      const Text('Severity-Filter'),
+                      const SizedBox(height: 6),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          ChoiceChip(
+                            label: const Text('all'),
+                            selected: _severityFilter == null,
+                            onSelected: (_) {
+                              setState(() {
+                                _severityFilter = null;
+                              });
+                            },
+                          ),
+                          ...UatInboxSeverity.values.map((severity) {
+                            return ChoiceChip(
+                              key: ValueKey('uat_severity_${severity.name}'),
+                              label: Text(_severityLabel(severity)),
+                              selected: _severityFilter == severity,
+                              onSelected: (_) {
+                                setState(() {
+                                  _severityFilter = severity;
+                                });
+                              },
+                            );
+                          }),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               Card(
                 child: ListTile(
                   leading: const Icon(Icons.copy_all_outlined),
@@ -440,7 +867,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              if (_items.isEmpty)
+              if (visibleItems.isEmpty)
                 Card(
                   child: ListTile(
                     leading: const Icon(Icons.inbox_outlined),
@@ -451,7 +878,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                     ),
                   ),
                 ),
-              ..._items.map((item) {
+              ...visibleItems.map((item) {
                 return Card(
                   margin: const EdgeInsets.only(bottom: 10),
                   child: ListTile(
