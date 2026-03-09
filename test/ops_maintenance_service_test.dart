@@ -1050,4 +1050,96 @@ void main() {
     expect(details['logged_via'], 'app_uat_helper');
     expect(details['updatedBoxes'], 6);
   });
+
+  test('setUatTicketStatus posts rpc payload', () async {
+    final client = _FakeBackendHttpClient()
+      ..nextPostResponse = const BackendHttpResponse(
+        statusCode: 200,
+        body: <String, dynamic>{'id': 200},
+      );
+    final service = OpsMaintenanceService(httpClient: client);
+
+    await service.setUatTicketStatus(
+      baseUrl: 'https://example.supabase.co',
+      jwt: 'jwt-token',
+      ticketId: 42,
+      uatStatus: OpsUatStatus.inProgress,
+      note: 'Wird geprueft',
+    );
+
+    expect(
+      client.lastPostUri.toString(),
+      'https://example.supabase.co/rest/v1/rpc/set_uat_ticket_status',
+    );
+    expect(client.lastPostPayload, <String, dynamic>{
+      'ticket_id': 42,
+      'uat_status': 'in_progress',
+      'note': 'Wird geprueft',
+    });
+  });
+
+  test(
+    'assignUatTicketOwner posts rpc payload and allows clear owner',
+    () async {
+      final client = _FakeBackendHttpClient()
+        ..queuedPostResponses.addAll(<BackendHttpResponse>[
+          const BackendHttpResponse(
+            statusCode: 200,
+            body: <String, dynamic>{'id': 201},
+          ),
+          const BackendHttpResponse(
+            statusCode: 200,
+            body: <String, dynamic>{'id': 202},
+          ),
+        ]);
+      final service = OpsMaintenanceService(httpClient: client);
+
+      await service.assignUatTicketOwner(
+        baseUrl: 'https://example.supabase.co',
+        jwt: 'jwt-token',
+        ticketId: 42,
+        ownerEmail: 'ops@glanzpunkt.de',
+        note: 'Owner gesetzt',
+      );
+      await service.assignUatTicketOwner(
+        baseUrl: 'https://example.supabase.co',
+        jwt: 'jwt-token',
+        ticketId: 42,
+        ownerEmail: '',
+      );
+
+      expect(
+        client.allPostUris.first.toString(),
+        'https://example.supabase.co/rest/v1/rpc/assign_uat_ticket_owner',
+      );
+      expect(client.allPostPayloads.first, <String, dynamic>{
+        'ticket_id': 42,
+        'owner_email': 'ops@glanzpunkt.de',
+        'note': 'Owner gesetzt',
+      });
+      expect(client.allPostPayloads.last, <String, dynamic>{
+        'ticket_id': 42,
+        'owner_email': null,
+      });
+    },
+  );
+
+  test('setUatTicketStatus throws StateError on non-2xx', () async {
+    final client = _FakeBackendHttpClient()
+      ..nextPostResponse = const BackendHttpResponse(
+        statusCode: 403,
+        body: <String, dynamic>{'message': 'forbidden'},
+      );
+    final service = OpsMaintenanceService(httpClient: client);
+
+    await expectLater(
+      () => service.setUatTicketStatus(
+        baseUrl: 'https://example.supabase.co',
+        jwt: 'jwt-token',
+        ticketId: 1,
+        uatStatus: OpsUatStatus.open,
+      ),
+      throwsA(predicate((e) => e is StateError && '$e'.contains('forbidden'))),
+    );
+  });
 }

@@ -105,7 +105,9 @@ samples, guidance on mobile development, and a full API reference.
 - UAT Inbox (operator-only) liest Betreiberaktionen als Ticket-Feed und unterstuetzt:
   - Suche + Status/Severity-Filter + `Nur offene Punkte`
   - manuellen UAT-Eintrag mit standardisiertem Payload (`uat_status`, `severity`, `target_build`)
+  - Status-Update + Owner-Zuweisung direkt pro Ticket (RPC-basiert, auditierbar)
   - dedizierte Widget-Tests in `test/uat_inbox_screen_test.dart`
+  - dafuer muss in Supabase zusaetzlich `supabase/operator_uat_ticket_actions.sql` ausgefuehrt sein
 - Betreiber-Thresholds (Reinigungsintervall + Long-Active-Warnung) werden serverseitig aus Supabase geladen.
   - dafuer muss in Supabase `supabase/operator_threshold_settings.sql` ausgefuehrt sein (`get_operator_threshold_settings` / `set_operator_threshold_settings` RPCs).
   - Schreiben ist auf `owner` begrenzt (operator kann lesen, aber nicht aendern).
@@ -187,6 +189,8 @@ samples, guidance on mobile development, and a full API reference.
   - requires key (`SUPABASE_ANON_KEY` oder `SUPABASE_PUBLISHABLE_KEY`) and both account credentials
 - Operator action log E2E (operator write/read, customer deny):
   `scripts/supabase_operator_action_log_e2e.sh`
+- UAT ticket status/owner E2E (operator allowed, customer deny):
+  `scripts/supabase_uat_ticket_update_e2e.sh`
 - KPI export E2E (operator allowed for day/week/month, customer deny):
   `scripts/supabase_operator_kpi_export_e2e.sh`
 - Operator threshold settings E2E (owner get/set allowed, customer deny):

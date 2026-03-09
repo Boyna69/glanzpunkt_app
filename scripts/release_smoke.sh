@@ -81,6 +81,17 @@ if [ "${RUN_SUPABASE_SMOKE:-0}" = "1" ]; then
       BOX_ID="${SUPABASE_OPERATOR_LOG_BOX_ID:-1}" \
       "$ROOT/scripts/supabase_operator_action_log_e2e.sh"
 
+    if [ "${RUN_SUPABASE_UAT_TICKET_CHECK:-0}" = "1" ]; then
+      echo "== Supabase UAT ticket update e2e =="
+        OPERATOR_EMAIL="$A_EMAIL" OPERATOR_PASSWORD="$A_PASSWORD" \
+        CUSTOMER_EMAIL="$B_EMAIL" CUSTOMER_PASSWORD="$B_PASSWORD" \
+        SUPABASE_ANON_KEY="$SUPABASE_API_KEY" \
+        BOX_ID="${SUPABASE_UAT_TICKET_BOX_ID:-1}" \
+        "$ROOT/scripts/supabase_uat_ticket_update_e2e.sh"
+    else
+      echo "== Supabase UAT ticket update e2e skipped (RUN_SUPABASE_UAT_TICKET_CHECK=0) =="
+    fi
+
     echo "== Supabase KPI export e2e =="
       OPERATOR_EMAIL="$A_EMAIL" OPERATOR_PASSWORD="$A_PASSWORD" \
       CUSTOMER_EMAIL="$B_EMAIL" CUSTOMER_PASSWORD="$B_PASSWORD" \

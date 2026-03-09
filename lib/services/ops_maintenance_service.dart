@@ -1189,4 +1189,101 @@ class OpsMaintenanceService {
         return 'low';
     }
   }
+
+  Future<void> setUatTicketStatus({
+    required String baseUrl,
+    required String jwt,
+    required int ticketId,
+    required OpsUatStatus uatStatus,
+    String? note,
+  }) async {
+    if (ticketId <= 0) {
+      throw const BackendHttpException(
+        kind: BackendHttpErrorKind.invalidResponse,
+        message: 'ticketId muss groesser als 0 sein.',
+      );
+    }
+
+    final uri = Uri.parse('$baseUrl/rest/v1/rpc/set_uat_ticket_status');
+    final payload = <String, dynamic>{
+      'ticket_id': ticketId,
+      'uat_status': _uatStatusValue(uatStatus),
+    };
+    final trimmedNote = note?.trim();
+    if (trimmedNote != null && trimmedNote.isNotEmpty) {
+      payload['note'] = trimmedNote;
+    }
+
+    final response = await _httpClient.postJson(
+      uri,
+      payload,
+      headers: <String, String>{'Authorization': 'Bearer $jwt'},
+    );
+
+    if (response.statusCode < 200 || response.statusCode > 299) {
+      final body = response.body;
+      final message = body is Map ? body['message'] as String? : null;
+      throw StateError(
+        message ??
+            'UAT-Status aktualisieren fehlgeschlagen (HTTP ${response.statusCode})',
+      );
+    }
+
+    if (response.body is! Map) {
+      throw const BackendHttpException(
+        kind: BackendHttpErrorKind.invalidResponse,
+        message: 'UAT-Status-Response ist kein JSON-Objekt.',
+      );
+    }
+  }
+
+  Future<void> assignUatTicketOwner({
+    required String baseUrl,
+    required String jwt,
+    required int ticketId,
+    String? ownerEmail,
+    String? note,
+  }) async {
+    if (ticketId <= 0) {
+      throw const BackendHttpException(
+        kind: BackendHttpErrorKind.invalidResponse,
+        message: 'ticketId muss groesser als 0 sein.',
+      );
+    }
+
+    final uri = Uri.parse('$baseUrl/rest/v1/rpc/assign_uat_ticket_owner');
+    final payload = <String, dynamic>{'ticket_id': ticketId};
+    final normalizedOwner = ownerEmail?.trim();
+    if (normalizedOwner != null && normalizedOwner.isNotEmpty) {
+      payload['owner_email'] = normalizedOwner;
+    } else {
+      payload['owner_email'] = null;
+    }
+    final trimmedNote = note?.trim();
+    if (trimmedNote != null && trimmedNote.isNotEmpty) {
+      payload['note'] = trimmedNote;
+    }
+
+    final response = await _httpClient.postJson(
+      uri,
+      payload,
+      headers: <String, String>{'Authorization': 'Bearer $jwt'},
+    );
+
+    if (response.statusCode < 200 || response.statusCode > 299) {
+      final body = response.body;
+      final message = body is Map ? body['message'] as String? : null;
+      throw StateError(
+        message ??
+            'UAT-Owner zuweisen fehlgeschlagen (HTTP ${response.statusCode})',
+      );
+    }
+
+    if (response.body is! Map) {
+      throw const BackendHttpException(
+        kind: BackendHttpErrorKind.invalidResponse,
+        message: 'UAT-Owner-Response ist kein JSON-Objekt.',
+      );
+    }
+  }
 }

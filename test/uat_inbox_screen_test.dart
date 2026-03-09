@@ -12,6 +12,8 @@ class _FakeOpsMaintenanceService extends OpsMaintenanceService {
 
   List<OpsOperatorActionItem> rows;
   final List<Map<String, dynamic>> loggedUatActions = <Map<String, dynamic>>[];
+  final List<Map<String, dynamic>> statusUpdates = <Map<String, dynamic>>[];
+  final List<Map<String, dynamic>> ownerAssignments = <Map<String, dynamic>>[];
   int fetchCallCount = 0;
 
   @override
@@ -80,6 +82,80 @@ class _FakeOpsMaintenanceService extends OpsMaintenanceService {
           'target_build': targetBuild,
         },
         createdAt: DateTime(2026, 3, 9, 12, 0, 0),
+      ),
+      ...rows,
+    ];
+  }
+
+  @override
+  Future<void> setUatTicketStatus({
+    required String baseUrl,
+    required String jwt,
+    required int ticketId,
+    required OpsUatStatus uatStatus,
+    String? note,
+  }) async {
+    statusUpdates.add(<String, dynamic>{
+      'base_url': baseUrl,
+      'jwt': jwt,
+      'ticket_id': ticketId,
+      'uat_status': uatStatus.name,
+      'note': note,
+    });
+    final nextId = rows.isEmpty ? 1 : rows.first.id + 1;
+    rows = <OpsOperatorActionItem>[
+      OpsOperatorActionItem(
+        id: nextId,
+        actorId: 'operator-1',
+        actorEmail: 'ops@glanzpunkt.de',
+        actionName: 'uat_ticket_status_updated',
+        actionStatus: 'partial',
+        boxId: null,
+        source: 'app',
+        details: <String, dynamic>{
+          'ticket_id': ticketId,
+          'uat_status': uatStatus == OpsUatStatus.inProgress
+              ? 'in_progress'
+              : uatStatus.name,
+        },
+        createdAt: DateTime(2026, 3, 9, 12, 5, 0),
+      ),
+      ...rows,
+    ];
+  }
+
+  @override
+  Future<void> assignUatTicketOwner({
+    required String baseUrl,
+    required String jwt,
+    required int ticketId,
+    String? ownerEmail,
+    String? note,
+  }) async {
+    ownerAssignments.add(<String, dynamic>{
+      'base_url': baseUrl,
+      'jwt': jwt,
+      'ticket_id': ticketId,
+      'owner_email': ownerEmail,
+      'note': note,
+    });
+    final nextId = rows.isEmpty ? 1 : rows.first.id + 1;
+    rows = <OpsOperatorActionItem>[
+      OpsOperatorActionItem(
+        id: nextId,
+        actorId: 'operator-1',
+        actorEmail: 'ops@glanzpunkt.de',
+        actionName: ownerEmail == null
+            ? 'uat_ticket_owner_cleared'
+            : 'uat_ticket_owner_assigned',
+        actionStatus: 'success',
+        boxId: null,
+        source: 'app',
+        details: <String, dynamic>{
+          'ticket_id': ticketId,
+          'owner_email': ownerEmail,
+        },
+        createdAt: DateTime(2026, 3, 9, 12, 6, 0),
       ),
       ...rows,
     ];

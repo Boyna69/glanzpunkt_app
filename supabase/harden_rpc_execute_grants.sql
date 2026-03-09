@@ -27,6 +27,8 @@ revoke all on function public.mark_box_cleaned(integer, text) from public, anon;
 revoke all on function public.log_operator_action(text, text, integer, jsonb, text) from public, anon;
 revoke all on function public.list_operator_actions(integer) from public, anon;
 revoke all on function public.list_operator_actions_filtered(integer, integer, text, integer, text, timestamptz, timestamptz) from public, anon;
+revoke all on function public.set_uat_ticket_status(bigint, text, text) from public, anon;
+revoke all on function public.assign_uat_ticket_owner(bigint, text, text) from public, anon;
 revoke all on function public.get_operator_threshold_settings() from public, anon;
 revoke all on function public.set_operator_threshold_settings(integer, integer) from public, anon;
 revoke all on function public.handle_new_auth_user_profile() from public, anon;
@@ -54,6 +56,8 @@ grant execute on function public.mark_box_cleaned(integer, text) to authenticate
 grant execute on function public.log_operator_action(text, text, integer, jsonb, text) to authenticated;
 grant execute on function public.list_operator_actions(integer) to authenticated;
 grant execute on function public.list_operator_actions_filtered(integer, integer, text, integer, text, timestamptz, timestamptz) to authenticated;
+grant execute on function public.set_uat_ticket_status(bigint, text, text) to authenticated;
+grant execute on function public.assign_uat_ticket_owner(bigint, text, text) to authenticated;
 grant execute on function public.get_operator_threshold_settings() to authenticated;
 grant execute on function public.set_operator_threshold_settings(integer, integer) to authenticated;
 

@@ -13,6 +13,7 @@ enum UatInboxStatus { open, inProgress, fixed, retest, closed }
 enum UatInboxSeverity { critical, high, medium, low }
 
 class UatInboxItem {
+  final int ticketId;
   final String id;
   final UatInboxSeverity severity;
   final String area;
@@ -23,6 +24,7 @@ class UatInboxItem {
   final DateTime createdAt;
 
   const UatInboxItem({
+    required this.ticketId,
     required this.id,
     required this.severity,
     required this.area,
@@ -32,6 +34,25 @@ class UatInboxItem {
     required this.targetBuild,
     required this.createdAt,
   });
+
+  UatInboxItem copyWith({
+    UatInboxSeverity? severity,
+    UatInboxStatus? status,
+    String? owner,
+    String? targetBuild,
+  }) {
+    return UatInboxItem(
+      ticketId: ticketId,
+      id: id,
+      severity: severity ?? this.severity,
+      area: area,
+      summary: summary,
+      status: status ?? this.status,
+      owner: owner ?? this.owner,
+      targetBuild: targetBuild ?? this.targetBuild,
+      createdAt: createdAt,
+    );
+  }
 }
 
 class UatInboxScreen extends StatefulWidget {
@@ -136,7 +157,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         return;
       }
       setState(() {
-        _items = rows.map(_mapFromOperatorAction).toList();
+        _items = _buildUatItems(rows);
         _usingFallbackFeed = usingFallback;
         _warning = null;
       });
@@ -189,10 +210,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         status == UatInboxStatus.retest;
   }
 
-  Future<void> _openCreateUatEntryDialog() async {
-    if (_isCreatingEntry || !mounted) {
-      return;
-    }
+  (String, String)? _readOperatorSession() {
     final auth = context.read<AuthService>();
     final jwt = auth.backendJwt;
     if (!auth.hasOperatorAccess || jwt == null || jwt.isEmpty) {
@@ -201,9 +219,208 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
           content: Text('Nur mit gueltiger Betreiber-Session moeglich.'),
         ),
       );
-      return;
+      return null;
     }
     final baseUrl = context.read<EnvironmentService>().activeBaseUrl;
+    return (baseUrl, jwt);
+  }
+
+  Future<void> _openSetTicketStatusDialog(UatInboxItem item) async {
+    final session = _readOperatorSession();
+    if (session == null) {
+      return;
+    }
+
+    var selectedStatus = item.status;
+    final noteController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) {
+          return AlertDialog(
+            title: Text('Status setzen (${item.id})'),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<UatInboxStatus>(
+                  key: ValueKey('uat_set_status_${item.ticketId}'),
+                  initialValue: selectedStatus,
+                  items: UatInboxStatus.values.map((status) {
+                    return DropdownMenuItem<UatInboxStatus>(
+                      value: status,
+                      child: Text(_statusLabel(status)),
+                    );
+                  }).toList(),
+                  decoration: const InputDecoration(
+                    labelText: 'Neuer Status',
+                    border: OutlineInputBorder(),
+                  ),
+                  onChanged: (value) {
+                    if (value == null) {
+                      return;
+                    }
+                    setDialogState(() {
+                      selectedStatus = value;
+                    });
+                  },
+                ),
+                const SizedBox(height: 10),
+                TextField(
+                  key: ValueKey('uat_set_status_note_${item.ticketId}'),
+                  controller: noteController,
+                  maxLines: 2,
+                  decoration: const InputDecoration(
+                    labelText: 'Notiz (optional)',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context, false),
+                child: const Text('Abbrechen'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(context, true),
+                child: const Text('Speichern'),
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    try {
+      await _opsMaintenance.setUatTicketStatus(
+        baseUrl: session.$1,
+        jwt: session.$2,
+        ticketId: item.ticketId,
+        uatStatus: _toOpsUatStatus(selectedStatus),
+        note: noteController.text.trim(),
+      );
+      await _reloadInbox();
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Status fuer ${item.id} aktualisiert.')),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('Status konnte nicht gesetzt werden: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openAssignOwnerDialog(UatInboxItem item) async {
+    final session = _readOperatorSession();
+    if (session == null) {
+      return;
+    }
+
+    final ownerController = TextEditingController(
+      text: item.owner == '-' ? '' : item.owner,
+    );
+    final noteController = TextEditingController();
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Owner setzen (${item.id})'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                key: ValueKey('uat_set_owner_email_${item.ticketId}'),
+                controller: ownerController,
+                decoration: const InputDecoration(
+                  labelText: 'Owner E-Mail',
+                  hintText: 'leer lassen = Owner entfernen',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                key: ValueKey('uat_set_owner_note_${item.ticketId}'),
+                controller: noteController,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Notiz (optional)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Abbrechen'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Speichern'),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true || !mounted) {
+      return;
+    }
+
+    try {
+      final ownerEmail = ownerController.text.trim();
+      await _opsMaintenance.assignUatTicketOwner(
+        baseUrl: session.$1,
+        jwt: session.$2,
+        ticketId: item.ticketId,
+        ownerEmail: ownerEmail.isEmpty ? null : ownerEmail,
+        note: noteController.text.trim(),
+      );
+      await _reloadInbox();
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Owner fuer ${item.id} aktualisiert.')),
+      );
+    } catch (e) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          backgroundColor: Colors.red.shade900,
+          content: Text('Owner konnte nicht gesetzt werden: $e'),
+        ),
+      );
+    }
+  }
+
+  Future<void> _openCreateUatEntryDialog() async {
+    if (_isCreatingEntry || !mounted) {
+      return;
+    }
+    final session = _readOperatorSession();
+    if (session == null) {
+      return;
+    }
+    final baseUrl = session.$1;
+    final jwt = session.$2;
     final summaryController = TextEditingController();
     final areaController = TextEditingController(text: 'operator_dashboard');
     final buildController = TextEditingController(text: _defaultTargetBuild);
@@ -448,6 +665,83 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
     }
   }
 
+  bool _isUatTicketUpdateAction(String actionName) {
+    final normalized = _normalize(actionName);
+    return normalized == 'uat_ticket_status_updated' ||
+        normalized == 'uat_ticket_owner_assigned' ||
+        normalized == 'uat_ticket_owner_cleared';
+  }
+
+  int? _extractTicketIdFromDetails(Map<String, dynamic> details) {
+    final raw = details['ticket_id'];
+    if (raw is num) {
+      final id = raw.toInt();
+      return id > 0 ? id : null;
+    }
+    if (raw is String) {
+      final id = int.tryParse(raw.trim());
+      if (id != null && id > 0) {
+        return id;
+      }
+    }
+    return null;
+  }
+
+  List<UatInboxItem> _buildUatItems(List<OpsOperatorActionItem> rows) {
+    final statusOverrides = <int, UatInboxStatus>{};
+    final ownerOverrides = <int, String>{};
+
+    for (final action in rows) {
+      if (!_isUatTicketUpdateAction(action.actionName)) {
+        continue;
+      }
+      final ticketId = _extractTicketIdFromDetails(action.details);
+      if (ticketId == null) {
+        continue;
+      }
+
+      final normalizedActionName = _normalize(action.actionName);
+      if (!statusOverrides.containsKey(ticketId) &&
+          normalizedActionName == 'uat_ticket_status_updated') {
+        final rawStatus = _firstText(action.details, <String>[
+          'uat_status',
+          'status',
+        ]);
+        if (rawStatus != null) {
+          statusOverrides[ticketId] = _mapStatus(
+            rawStatus,
+            action.actionStatus,
+          );
+        }
+      }
+
+      if (!ownerOverrides.containsKey(ticketId)) {
+        if (normalizedActionName == 'uat_ticket_owner_cleared') {
+          ownerOverrides[ticketId] = '-';
+        } else if (normalizedActionName == 'uat_ticket_owner_assigned') {
+          ownerOverrides[ticketId] =
+              _firstText(action.details, <String>['owner_email', 'owner']) ??
+              '-';
+        }
+      }
+    }
+
+    final items = <UatInboxItem>[];
+    for (final action in rows) {
+      if (_isUatTicketUpdateAction(action.actionName)) {
+        continue;
+      }
+      final baseItem = _mapFromOperatorAction(action);
+      items.add(
+        baseItem.copyWith(
+          status: statusOverrides[action.id] ?? baseItem.status,
+          owner: ownerOverrides[action.id] ?? baseItem.owner,
+        ),
+      );
+    }
+    return items;
+  }
+
   UatInboxItem _mapFromOperatorAction(OpsOperatorActionItem action) {
     final details = action.details;
     final statusFromDetails = _firstText(details, <String>[
@@ -483,7 +777,8 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
         : action.actorId;
 
     return UatInboxItem(
-      id: 'LOG-${action.id}',
+      ticketId: action.id,
+      id: 'UAT-${action.id}',
       severity: _mapSeverity(
         status: action.actionStatus,
         severity: severityFromDetails,
@@ -889,6 +1184,7 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                       'Zeit: ${item.createdAt.toLocal().toIso8601String()}',
                     ),
                     trailing: Column(
+                      mainAxisSize: MainAxisSize.min,
                       mainAxisAlignment: MainAxisAlignment.center,
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
@@ -926,6 +1222,31 @@ class _UatInboxScreenState extends State<UatInboxScreen> {
                               color: _severityColor(item.severity),
                             ),
                           ),
+                        ),
+                        const SizedBox(height: 4),
+                        PopupMenuButton<String>(
+                          key: ValueKey('uat_ticket_actions_${item.ticketId}'),
+                          tooltip: 'Ticket-Aktionen',
+                          onSelected: (value) {
+                            if (value == 'set_status') {
+                              _openSetTicketStatusDialog(item);
+                              return;
+                            }
+                            if (value == 'set_owner') {
+                              _openAssignOwnerDialog(item);
+                            }
+                          },
+                          itemBuilder: (context) => const [
+                            PopupMenuItem<String>(
+                              value: 'set_status',
+                              child: Text('Status setzen'),
+                            ),
+                            PopupMenuItem<String>(
+                              value: 'set_owner',
+                              child: Text('Owner setzen'),
+                            ),
+                          ],
+                          child: const Icon(Icons.more_vert),
                         ),
                       ],
                     ),

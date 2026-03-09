@@ -91,6 +91,9 @@ Vorgehen:
    - `Nur offene Punkte`
    - Status-Filter (`open`, `in_progress`, `fixed`, `retest`, `closed`)
    - Severity-Filter (`critical`, `high`, `medium`, `low`)
+7. Ticket-Aktionen pro Eintrag:
+   - `Status setzen`
+   - `Owner setzen` (E-Mail, leer = Owner entfernen)
 
 Hinweis:
 

@@ -91,6 +91,7 @@ Fertiges SQL zum Anwenden:
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/cleanup_legacy_data.sql`
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/harden_internal_public_tables_rls.sql`
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/operator_action_log.sql`
+- `/Users/fynn-olegottsch/glanzpunkt_app/supabase/operator_uat_ticket_actions.sql`
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/operator_threshold_settings.sql`
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/operator_kpi_export.sql`
 - `/Users/fynn-olegottsch/glanzpunkt_app/supabase/scheduler_expire_active_sessions.sql`
@@ -112,9 +113,10 @@ Empfohlene Reihenfolge:
 8. `scheduler_expire_active_sessions.sql` (empfohlen: Auto-Reconciliation jede Minute)
 9. `harden_internal_public_tables_rls.sql` (RLS/REVOKE fuer interne Legacy-/Runtime-Tabellen)
 10. `operator_action_log.sql` (Operator-Audit-Log + Filter-RPC + append-only guard)
-11. `operator_threshold_settings.sql` (konfigurierbare Betreiber-Thresholds)
-12. `operator_kpi_export.sql` (KPI-Export Tag/Woche/Monat fuer Betreiber)
-13. optional: `customer_topup_enable.sql` (Customer-Top-up fuer Tests freigeben)
+11. `operator_uat_ticket_actions.sql` (UAT-Ticket-Status + Owner-Zuweisung per RPC)
+12. `operator_threshold_settings.sql` (konfigurierbare Betreiber-Thresholds)
+13. `operator_kpi_export.sql` (KPI-Export Tag/Woche/Monat fuer Betreiber)
+14. optional: `customer_topup_enable.sql` (Customer-Top-up fuer Tests freigeben)
 
 ## Betreiberzugriff (harte Trennung)
 
@@ -260,6 +262,13 @@ where jobname = 'glanzpunkt_expire_active_sessions';
   `CUSTOMER_EMAIL`, `CUSTOMER_PASSWORD`, `OPERATOR_EMAIL`, `OPERATOR_PASSWORD`.
   Hinweis: benoetigt die aktuelle SQL-Migration `supabase/operator_action_log.sql`
   inklusive RPC `public.list_operator_actions_filtered(...)`.
+- UAT-Ticket-Status/Owner E2E:
+  `scripts/supabase_uat_ticket_update_e2e.sh` mit Key
+  (`SUPABASE_PUBLISHABLE_KEY` oder legacy `SUPABASE_ANON_KEY`),
+  `CUSTOMER_EMAIL`, `CUSTOMER_PASSWORD`, `OPERATOR_EMAIL`, `OPERATOR_PASSWORD`.
+  Hinweis: benoetigt zusaetzlich die SQL-Migration
+  `supabase/operator_uat_ticket_actions.sql` inklusive RPC
+  `public.set_uat_ticket_status(...)` und `public.assign_uat_ticket_owner(...)`.
 - KPI-Export E2E:
   `scripts/supabase_operator_kpi_export_e2e.sh` mit Key
   (`SUPABASE_PUBLISHABLE_KEY` oder legacy `SUPABASE_ANON_KEY`),
