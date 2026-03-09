@@ -194,6 +194,7 @@ samples, guidance on mobile development, and a full API reference.
   - create local file (ignored by git): `.release-gate.env`
   - behavior: pushing to `main` runs `scripts/release_gate_quick.sh` and blocks push on failure
   - pre-push always includes UAT ticket status/owner E2E (`scripts/supabase_uat_ticket_update_e2e.sh`)
+  - pre-push enforces UAT backlog hard gate (`RUN_SUPABASE_UAT_BACKLOG_GATE=1`)
   - emergency bypass: `SKIP_RELEASE_GATE=1 git push` (not recommended)
 - RPC contract check (verifies deployed RPC names/permissions, no dangerous writes):
   `scripts/supabase_rpc_contract_check.sh`
