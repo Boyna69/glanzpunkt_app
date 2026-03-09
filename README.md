@@ -37,8 +37,14 @@ samples, guidance on mobile development, and a full API reference.
   `docs/internal_test_distribution.md`
 - Internal tester install guide (DE):
   `docs/internal_tester_install_guide_de.md`
+- Internal APK distribution runbook (DE):
+  `docs/internal_apk_distribution_runbook_de.md`
 - Internal UAT runbook + bug triage templates:
   `docs/internal_uat_runbook.md`
+- Security rotation runbook (DE):
+  `docs/security_rotation_runbook_de.md`
+- Store metadata handover (DE):
+  `docs/store_metadata_handover_de.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`
@@ -218,6 +224,8 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/supabase_operator_threshold_settings_e2e.sh`
 - Secret hygiene check (blocks committed keys/tokens and non-placeholder env template values):
   `scripts/security_secrets_check.sh`
+- Internal release bundle packager (APK + checksum + notes):
+  `scripts/package_internal_release_bundle.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

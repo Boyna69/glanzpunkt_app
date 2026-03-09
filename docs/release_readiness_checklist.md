@@ -79,6 +79,7 @@ Prepared templates:
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/payment_rollout_decision.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_template.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_release_draft_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_handover_de.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_upload_dry_run_checklist.md`
 
 Current blocker notes:
@@ -153,7 +154,7 @@ Optional GitHub Variables (for legal/support check):
 ## 8. Internal Distribution (No Public Store Release)
 
 - [x] Android signed tester artifact path documented (`app-release.apk`).
-- [ ] private APK delivery channel selected (Drive/MDM/Firebase App Distribution).
+- [x] private APK delivery channel selected (Google Drive private sharing runbook prepared).
 - [x] tester install guide prepared (unknown sources + rollback path) and ready to share.
 - [x] iOS path chosen: local Xcode install only (no cost).
 
@@ -161,3 +162,4 @@ Reference:
 
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_test_distribution.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_install_guide_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_apk_distribution_runbook_de.md`
