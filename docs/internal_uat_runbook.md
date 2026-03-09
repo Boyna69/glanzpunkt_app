@@ -1,6 +1,6 @@
 # Internal UAT Runbook
 
-Stand: 2026-03-08
+Stand: 2026-03-09
 
 Ziel: Einheitlicher Ablauf fuer interne Tests, damit Fehler reproduzierbar sind
 und schnell priorisiert/gefixt werden koennen.
@@ -75,3 +75,24 @@ Vorlage:
 Zur Verwaltung der Rueckmeldungen:
 
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_uat_triage_board.md`
+
+## 9) In-App UAT Inbox (Operator)
+
+Die Betreiberansicht hat eine eigene `UAT Inbox` fuer strukturiertes Tracking.
+
+Vorgehen:
+
+1. Als `operator/owner` einloggen.
+2. In den Einstellungen die `UAT Inbox` oeffnen.
+3. Neue Punkte ueber `UAT-Eintrag erfassen` anlegen.
+4. Pflichtfelder: `Kurzbeschreibung`, `Bereich`, `Status`, `Severity`.
+5. Optional: `Box-ID` und `Target Build` setzen.
+6. Fuer die Abarbeitung Filter nutzen:
+   - `Nur offene Punkte`
+   - Status-Filter (`open`, `in_progress`, `fixed`, `retest`, `closed`)
+   - Severity-Filter (`critical`, `high`, `medium`, `low`)
+
+Hinweis:
+
+- Die Inbox liest/schreibt ueber das Operator-Action-Log (RPC, serverseitig
+  abgesichert), damit keine lokalen Schattenlisten entstehen.

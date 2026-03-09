@@ -102,6 +102,10 @@ samples, guidance on mobile development, and a full API reference.
 - Operator-Aktionsprotokoll ist filterbar (Status/Box/Suche) und als CSV-Datei lokal speicherbar oder per Share-Sheet exportierbar.
   - dafuer muss in Supabase die aktuelle Version von `supabase/operator_action_log.sql` ausgefuehrt sein (`list_operator_actions_filtered` RPC).
   - Audit-Haertung: `operator_action_log` ist als append-only konzipiert (keine App-Updates/Deletes; Trigger blockt DB-Updates/Deletes).
+- UAT Inbox (operator-only) liest Betreiberaktionen als Ticket-Feed und unterstuetzt:
+  - Suche + Status/Severity-Filter + `Nur offene Punkte`
+  - manuellen UAT-Eintrag mit standardisiertem Payload (`uat_status`, `severity`, `target_build`)
+  - dedizierte Widget-Tests in `test/uat_inbox_screen_test.dart`
 - Betreiber-Thresholds (Reinigungsintervall + Long-Active-Warnung) werden serverseitig aus Supabase geladen.
   - dafuer muss in Supabase `supabase/operator_threshold_settings.sql` ausgefuehrt sein (`get_operator_threshold_settings` / `set_operator_threshold_settings` RPCs).
   - Schreiben ist auf `owner` begrenzt (operator kann lesen, aber nicht aendern).
