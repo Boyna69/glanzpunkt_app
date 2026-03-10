@@ -60,6 +60,20 @@ Erwartung:
 - `SECRET HYGIENE CHECK PASSED`
 - `SMOKE CHECKS PASSED`
 
+Optionaler Legacy-Guard (sollte nach Rotation PASS liefern):
+
+```bash
+LEGACY_SUPABASE_KEY='sb_publishable_...' \
+LEGACY_OPERATOR_EMAIL='old-operator@example.com' LEGACY_OPERATOR_PASSWORD='old-password' \
+LEGACY_CUSTOMER_EMAIL='old-customer@example.com' LEGACY_CUSTOMER_PASSWORD='old-password' \
+/Users/fynn-olegottsch/glanzpunkt_app/scripts/rotation_guard_legacy_credentials.sh
+```
+
+Erwartung:
+
+- `ROTATION GUARD PASSED`
+- Alte Keys/Passwoerter funktionieren nicht mehr.
+
 ## Schritt 6: Alte Werte deaktivieren
 
 Nach erfolgreicher Verifikation:
@@ -71,4 +85,3 @@ Nach erfolgreicher Verifikation:
 
 - Keys und Passwoerter nie im Repository speichern.
 - Nur in GitHub Secrets und lokale, ignorierte Env-Dateien schreiben.
-
