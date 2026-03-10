@@ -33,6 +33,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/store_metadata_release_draft_de.md`
 - Store upload dry-run checklist:
   `docs/store_upload_dry_run_checklist.md`
+- Store screenshot capture guide (DE):
+  `docs/store_screenshot_capture_guide_de.md`
 - Internal test distribution (without Store release):
   `docs/internal_test_distribution.md`
 - Internal tester install guide (DE):
@@ -226,6 +228,8 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/security_secrets_check.sh`
 - Internal release bundle packager (APK + checksum + notes):
   `scripts/package_internal_release_bundle.sh`
+- Store dry-run bundle packager (AAB/APK + hashes + evidence template):
+  `scripts/prepare_store_dry_run_bundle.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

@@ -80,6 +80,7 @@ Prepared templates:
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_template.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_release_draft_de.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_handover_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_screenshot_capture_guide_de.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_upload_dry_run_checklist.md`
 
 Current blocker notes:

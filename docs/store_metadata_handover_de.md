@@ -29,6 +29,8 @@ Zu uebernehmen:
   - Wallet/Buchungen
 - Altersfreigabe-Fragen beantworten
 - Data Safety (Google) / Privacy Nutrition Label (Apple)
+- Screenshot-Capture-Leitfaden:
+  `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_screenshot_capture_guide_de.md`
 
 ## 3) Google Play Console (nur vorbereiten)
 
@@ -53,4 +55,3 @@ Vor dem echten Release:
 
 - Keine Widersprueche zwischen Store-Text und App-Funktionen.
 - Wenn `CUSTOMER_TOP_UP_ENABLED=false`, keine aktive Top-up-Werbung im Storetext.
-
