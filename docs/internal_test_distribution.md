@@ -1,6 +1,6 @@
 # Internal Test Distribution (Without Store Release)
 
-Stand: 2026-03-08
+Stand: 2026-03-09
 
 Goal: app is release-grade and testable by real users, without public Store release.
 
@@ -28,6 +28,11 @@ Suggested tester flow:
    - Open APK and install.
 3. Share expected backend env (production-like Supabase) and test accounts.
 4. Track tester feedback with app version + APK hash (printed by script).
+
+Dedicated handoff guide (DE):
+
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_install_guide_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_release_handoff_2026-03-10.md`
 
 ## 2) iOS testing without App Store release
 

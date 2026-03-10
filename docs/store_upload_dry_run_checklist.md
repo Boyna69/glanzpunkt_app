@@ -1,6 +1,6 @@
 # Store Upload Dry-Run Checklist
 
-Stand: 2026-03-08
+Stand: 2026-03-10
 
 Ziel: Ein kompletter Testlauf bis kurz vor finalem Veroeffentlichen in Google
 Play / Apple App Store.
@@ -11,11 +11,13 @@ Play / Apple App Store.
    `CUSTOMER_TOP_UP_ENABLED=false /Users/fynn-olegottsch/glanzpunkt_app/scripts/build_android_release.sh`
 2. Pruefen, dass Bundle existiert:
    `build/app/outputs/bundle/release/app-release.aab`
-3. In Play Console neues Internal-Testing Release anlegen.
-4. `app-release.aab` hochladen.
-5. Release Notes hinterlegen.
-6. Data Safety, Content Rating, App Access, Werbung/Ads checken.
-7. Speichern bis Status `Ready to send for review` (ohne echten Go-Live).
+3. Dry-Run-Handover-Bundle vorbereiten (Hashes + Templates):
+   `/Users/fynn-olegottsch/glanzpunkt_app/scripts/prepare_store_dry_run_bundle.sh`
+4. In Play Console neues Internal-Testing Release anlegen.
+5. `app-release.aab` hochladen.
+6. Release Notes hinterlegen.
+7. Data Safety, Content Rating, App Access, Werbung/Ads checken.
+8. Speichern bis Status `Ready to send for review` (ohne echten Go-Live).
 
 ## 2) iOS Dry-Run (App Store Connect)
 
@@ -42,3 +44,5 @@ Play / Apple App Store.
 - Screenshot App Store Connect Version-Status
 - Build-Artefakt-Hash oder Dateiname + Timestamp
 - Kurzes Release-Protokoll (wer, wann, was hochgeladen)
+- Optionaler Evidence-Template-Startpunkt:
+  `build/store_dry_run/<BUILD_TAG>/DRY_RUN_EVIDENCE_TEMPLATE.md`

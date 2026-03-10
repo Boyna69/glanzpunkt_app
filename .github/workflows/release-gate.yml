@@ -88,6 +88,10 @@ jobs:
         shell: bash
         run: chmod +x scripts/*.sh
 
+      - name: Secret hygiene check
+        shell: bash
+        run: "${{ github.workspace }}/scripts/security_secrets_check.sh"
+
       - name: Run release gate
         shell: bash
         run: |

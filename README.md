@@ -33,10 +33,24 @@ samples, guidance on mobile development, and a full API reference.
   `docs/store_metadata_release_draft_de.md`
 - Store upload dry-run checklist:
   `docs/store_upload_dry_run_checklist.md`
+- Store screenshot capture guide (DE):
+  `docs/store_screenshot_capture_guide_de.md`
 - Internal test distribution (without Store release):
   `docs/internal_test_distribution.md`
+- Internal tester install guide (DE):
+  `docs/internal_tester_install_guide_de.md`
+- Internal tester release handoff (2026-03-10):
+  `docs/internal_tester_release_handoff_2026-03-10.md`
+- Internal APK distribution runbook (DE):
+  `docs/internal_apk_distribution_runbook_de.md`
 - Internal UAT runbook + bug triage templates:
   `docs/internal_uat_runbook.md`
+- Security rotation runbook (DE):
+  `docs/security_rotation_runbook_de.md`
+- Store metadata handover (DE):
+  `docs/store_metadata_handover_de.md`
+- PR review + merge quicksteps (DE):
+  `docs/pr_review_merge_quicksteps_de.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`
@@ -193,6 +207,7 @@ samples, guidance on mobile development, and a full API reference.
   - credentials file template: `.release-gate.env.example`
   - create local file (ignored by git): `.release-gate.env`
   - behavior: pushing to `main` runs `scripts/release_gate_quick.sh` and blocks push on failure
+  - pre-push runs secret hygiene check (`scripts/security_secrets_check.sh`)
   - pre-push always includes UAT ticket status/owner E2E (`scripts/supabase_uat_ticket_update_e2e.sh`)
   - pre-push enforces UAT backlog hard gate (`RUN_SUPABASE_UAT_BACKLOG_GATE=1`)
   - emergency bypass: `SKIP_RELEASE_GATE=1 git push` (not recommended)
@@ -213,6 +228,17 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/supabase_operator_kpi_export_e2e.sh`
 - Operator threshold settings E2E (owner get/set allowed, customer deny):
   `scripts/supabase_operator_threshold_settings_e2e.sh`
+- Secret hygiene check (blocks committed keys/tokens and non-placeholder env template values):
+  `scripts/security_secrets_check.sh`
+- Internal release bundle packager (APK + checksum + notes):
+  `scripts/package_internal_release_bundle.sh`
+- Store dry-run bundle packager (AAB/APK + hashes + evidence template):
+  `scripts/prepare_store_dry_run_bundle.sh`
+- Store screenshot pack helpers:
+  `scripts/init_store_screenshot_pack.sh`
+  `scripts/validate_store_screenshot_pack.sh`
+- One-command readiness snapshot (docs/artifacts/security/PR+CI overview):
+  `scripts/release_readiness_snapshot.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

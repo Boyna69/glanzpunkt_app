@@ -1,6 +1,6 @@
 # Release Readiness Checklist
 
-Stand: 2026-03-08
+Stand: 2026-03-09
 
 ## 1. Build and Test Gate
 
@@ -33,6 +33,8 @@ Required security state:
 
 ## 3. Security Regression Gate
 
+- [ ] Supabase keys and test-account passwords rotated after public-repo exposure.
+- [x] no real credentials in repository files (`scripts/security_secrets_check.sh` passes).
 - [x] A/B isolation checks pass.
 - [x] RPC contract check passes (deployed names + permission expectations).
 - [x] role access check passes (customer denied, operator allowed).
@@ -77,6 +79,8 @@ Prepared templates:
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/payment_rollout_decision.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_template.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_release_draft_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_metadata_handover_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_screenshot_capture_guide_de.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/store_upload_dry_run_checklist.md`
 
 Current blocker notes:
@@ -92,8 +96,8 @@ Current blocker notes:
 Release is GO only if all of the following are true:
 
 - [x] latest `release_gate.sh` run is fully green.
-- [ ] no critical or high severity bugs open.
-- [ ] UAT backlog gate passes (`scripts/supabase_uat_backlog_gate.sh` or `RUN_SUPABASE_UAT_BACKLOG_GATE=1`).
+- [x] no critical or high severity bugs open.
+- [x] UAT backlog gate passes (`scripts/supabase_uat_backlog_gate.sh` or `RUN_SUPABASE_UAT_BACKLOG_GATE=1`).
 - [ ] production Supabase migration set matches repository SQL files.
 - [x] operator/customer separation validated on production-like data.
 
@@ -108,6 +112,10 @@ Latest gate evidence:
 - 2026-03-08: `release_smoke.sh` green mit aktivem Legal-Check (`RUN_LEGAL_SUPPORT_CHECK=1`, beide Rechts-URLs final `200`).
 - 2026-03-08: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`, `RUN_SUPABASE_QUICK_FLOW_CHECK=0`) inkl. A/B isolation, RPC contract, role access, table exposure, operator health, cleaning workflow, action log, KPI export, owner-threshold e2e.
 - 2026-03-08: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`, Quick-Flow aktiv) inkl. aktivem `supabase_activate_countdown_e2e` (Reserve/Activate/Expire/Status).
+- 2026-03-09: `scripts/release_gate_quick.sh` green (analyze, test, A/B isolation, RPC contract, role access, table exposure, operator health, cleaning workflow, action log, UAT ticket update e2e, KPI export, owner-threshold e2e).
+- 2026-03-09: `scripts/supabase_uat_backlog_gate.sh` green (`Open tickets considered: 0`, blocking severities `critical/high`).
+- 2026-03-10: Store dry-run prep bundle generated (`scripts/prepare_store_dry_run_bundle.sh`) inkl. AAB/APK hashes + evidence template in `build/store_dry_run/20260310-203924`.
+- 2026-03-10: Readiness snapshot helper added (`scripts/release_readiness_snapshot.sh`) fuer schnellen Gesamtstatus (Security + Artefakte + PR/CI).
 
 ## 7. CI Gates
 
@@ -149,12 +157,13 @@ Optional GitHub Variables (for legal/support check):
 ## 8. Internal Distribution (No Public Store Release)
 
 - [x] Android signed tester artifact path documented (`app-release.apk`).
-- [ ] private APK delivery channel selected (Drive/MDM/Firebase App Distribution).
-- [ ] tester install guide shared (unknown sources + rollback path).
-- [ ] iOS path chosen:
-  - local Xcode install only (no cost), or
-  - TestFlight (requires paid Apple Developer account).
+- [x] private APK delivery channel selected (Google Drive private sharing runbook prepared).
+- [x] tester install guide prepared (unknown sources + rollback path) and ready to share.
+- [x] iOS path chosen: local Xcode install only (no cost).
 
 Reference:
 
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_test_distribution.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_install_guide_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_release_handoff_2026-03-10.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_apk_distribution_runbook_de.md`
