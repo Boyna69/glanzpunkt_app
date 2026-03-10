@@ -8,6 +8,13 @@ OPERATOR_PASSWORD="${OPERATOR_PASSWORD:-${A_PASSWORD:-}}"
 CUSTOMER_EMAIL="${CUSTOMER_EMAIL:-${B_EMAIL:-}}"
 CUSTOMER_PASSWORD="${CUSTOMER_PASSWORD:-${B_PASSWORD:-}}"
 BOX_ID="${BOX_ID:-1}"
+UAT_SEVERITY="${UAT_SEVERITY:-low}"
+
+if [ "$UAT_SEVERITY" != "low" ] && [ "$UAT_SEVERITY" != "medium" ] && [ "$UAT_SEVERITY" != "high" ] && [ "$UAT_SEVERITY" != "critical" ]; then
+  echo "Invalid UAT_SEVERITY: $UAT_SEVERITY"
+  echo "Allowed: low|medium|high|critical"
+  exit 2
+fi
 
 if [ -z "$KEY" ]; then
   echo "Missing SUPABASE_ANON_KEY or SUPABASE_PUBLISHABLE_KEY."
@@ -18,6 +25,7 @@ if [ -z "$OPERATOR_EMAIL" ] || [ -z "$OPERATOR_PASSWORD" ] || [ -z "$CUSTOMER_EM
   echo "Missing credentials."
   echo "Usage: OPERATOR_EMAIL=... OPERATOR_PASSWORD=... CUSTOMER_EMAIL=... CUSTOMER_PASSWORD=... SUPABASE_PUBLISHABLE_KEY=sb_publishable_... scripts/supabase_uat_ticket_update_e2e.sh"
   echo "   or (legacy): ... SUPABASE_ANON_KEY=... scripts/supabase_uat_ticket_update_e2e.sh"
+  echo "Optional: UAT_SEVERITY=low|medium|high|critical (default: low)"
   exit 2
 fi
 
@@ -101,7 +109,7 @@ cu_hdr=(
 )
 
 echo "== Operator creates UAT ticket =="
-CREATE_PAYLOAD="$(curl -sS -X POST "$BASE/rest/v1/rpc/log_operator_action" "${op_hdr[@]}" -d "{\"action_name\":\"uat_manual_report\",\"action_status\":\"failed\",\"box_id\":$BOX_ID,\"source\":\"app\",\"details\":{\"summary\":\"E2E UAT Ticket\",\"area\":\"wallet\",\"uat_status\":\"open\",\"severity\":\"high\",\"target_build\":\"e2e\"}}")"
+CREATE_PAYLOAD="$(curl -sS -X POST "$BASE/rest/v1/rpc/log_operator_action" "${op_hdr[@]}" -d "{\"action_name\":\"uat_manual_report\",\"action_status\":\"failed\",\"box_id\":$BOX_ID,\"source\":\"app\",\"details\":{\"summary\":\"E2E UAT Ticket\",\"area\":\"wallet\",\"uat_status\":\"open\",\"severity\":\"$UAT_SEVERITY\",\"target_build\":\"e2e\"}}")"
 echo "$CREATE_PAYLOAD"
 assert_no_error_code "$CREATE_PAYLOAD" "log_operator_action"
 TICKET_ID="$(extract_int_field "$CREATE_PAYLOAD" "id")"
