@@ -1,6 +1,6 @@
 # Security Rotation Runbook (Supabase + GitHub)
 
-Stand: 2026-03-09
+Stand: 2026-03-10
 
 Ziel: Nach Public-Repo-Exposure alte Test-Zugaenge und Keys ersetzen und sicher
 weiterarbeiten.

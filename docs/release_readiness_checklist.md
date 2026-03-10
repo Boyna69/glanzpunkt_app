@@ -1,6 +1,6 @@
 # Release Readiness Checklist
 
-Stand: 2026-03-09
+Stand: 2026-03-10
 
 ## 1. Build and Test Gate
 
@@ -34,6 +34,7 @@ Required security state:
 ## 3. Security Regression Gate
 
 - [ ] Supabase keys and test-account passwords rotated after public-repo exposure.
+- [ ] legacy rotation guard passes (old key/passwords rejected).
 - [x] no real credentials in repository files (`scripts/security_secrets_check.sh` passes).
 - [x] A/B isolation checks pass.
 - [x] RPC contract check passes (deployed names + permission expectations).
@@ -54,6 +55,7 @@ Core scripts:
 - `/Users/fynn-olegottsch/glanzpunkt_app/scripts/supabase_cleaning_workflow_e2e.sh`
 - `/Users/fynn-olegottsch/glanzpunkt_app/scripts/supabase_operator_action_log_e2e.sh`
 - `/Users/fynn-olegottsch/glanzpunkt_app/scripts/supabase_operator_kpi_export_e2e.sh`
+- `/Users/fynn-olegottsch/glanzpunkt_app/scripts/rotation_guard_legacy_credentials.sh`
 
 ## 4. Operator Dashboard Runtime Gate
 
@@ -90,6 +92,9 @@ Current blocker notes:
   Datenschutz/Impressum final HTTP `404`).
 - 2026-03-04: Legal URLs currently fail live HTTP check (final `404` for
   Datenschutz/Impressum), see `docs/legal_support_review.md` (historisch).
+- 2026-03-10: `rotation_guard_legacy_credentials.sh` FAIL mit den alten
+  Testwerten (`Test1` + alter publishable key funktionieren noch) -> Rotation
+  in Supabase/Auth noch offen.
 
 ## 6. Go/No-Go Rule
 
@@ -116,6 +121,9 @@ Latest gate evidence:
 - 2026-03-09: `scripts/supabase_uat_backlog_gate.sh` green (`Open tickets considered: 0`, blocking severities `critical/high`).
 - 2026-03-10: Store dry-run prep bundle generated (`scripts/prepare_store_dry_run_bundle.sh`) inkl. AAB/APK hashes + evidence template in `build/store_dry_run/20260310-203924`.
 - 2026-03-10: Readiness snapshot helper added (`scripts/release_readiness_snapshot.sh`) fuer schnellen Gesamtstatus (Security + Artefakte + PR/CI).
+- 2026-03-10: PR #1 (`codex/security-hotfix-secrets`) erfolgreich gemerged.
+- 2026-03-10: PR #2 (`codex/security-rotation-guard`) erstellt; legacy
+  rotation guard eingefuehrt.
 
 ## 7. CI Gates
 
