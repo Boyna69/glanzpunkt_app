@@ -237,6 +237,8 @@ samples, guidance on mobile development, and a full API reference.
 - Store screenshot pack helpers:
   `scripts/init_store_screenshot_pack.sh`
   `scripts/validate_store_screenshot_pack.sh`
+- One-command readiness snapshot (docs/artifacts/security/PR+CI overview):
+  `scripts/release_readiness_snapshot.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

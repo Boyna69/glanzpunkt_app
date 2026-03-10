@@ -115,6 +115,7 @@ Latest gate evidence:
 - 2026-03-09: `scripts/release_gate_quick.sh` green (analyze, test, A/B isolation, RPC contract, role access, table exposure, operator health, cleaning workflow, action log, UAT ticket update e2e, KPI export, owner-threshold e2e).
 - 2026-03-09: `scripts/supabase_uat_backlog_gate.sh` green (`Open tickets considered: 0`, blocking severities `critical/high`).
 - 2026-03-10: Store dry-run prep bundle generated (`scripts/prepare_store_dry_run_bundle.sh`) inkl. AAB/APK hashes + evidence template in `build/store_dry_run/20260310-203924`.
+- 2026-03-10: Readiness snapshot helper added (`scripts/release_readiness_snapshot.sh`) fuer schnellen Gesamtstatus (Security + Artefakte + PR/CI).
 
 ## 7. CI Gates
 
