@@ -32,6 +32,7 @@ Suggested tester flow:
 Dedicated handoff guide (DE):
 
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_install_guide_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_release_handoff_2026-03-10.md`
 
 ## 2) iOS testing without App Store release
 

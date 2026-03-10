@@ -114,6 +114,7 @@ Latest gate evidence:
 - 2026-03-08: `release_gate.sh` green (`RUN_SUPABASE_BOX_CYCLE=0`, Quick-Flow aktiv) inkl. aktivem `supabase_activate_countdown_e2e` (Reserve/Activate/Expire/Status).
 - 2026-03-09: `scripts/release_gate_quick.sh` green (analyze, test, A/B isolation, RPC contract, role access, table exposure, operator health, cleaning workflow, action log, UAT ticket update e2e, KPI export, owner-threshold e2e).
 - 2026-03-09: `scripts/supabase_uat_backlog_gate.sh` green (`Open tickets considered: 0`, blocking severities `critical/high`).
+- 2026-03-10: Store dry-run prep bundle generated (`scripts/prepare_store_dry_run_bundle.sh`) inkl. AAB/APK hashes + evidence template in `build/store_dry_run/20260310-203924`.
 
 ## 7. CI Gates
 
@@ -163,4 +164,5 @@ Reference:
 
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_test_distribution.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_install_guide_de.md`
+- `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_tester_release_handoff_2026-03-10.md`
 - `/Users/fynn-olegottsch/glanzpunkt_app/docs/internal_apk_distribution_runbook_de.md`

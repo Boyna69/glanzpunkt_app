@@ -39,6 +39,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/internal_test_distribution.md`
 - Internal tester install guide (DE):
   `docs/internal_tester_install_guide_de.md`
+- Internal tester release handoff (2026-03-10):
+  `docs/internal_tester_release_handoff_2026-03-10.md`
 - Internal APK distribution runbook (DE):
   `docs/internal_apk_distribution_runbook_de.md`
 - Internal UAT runbook + bug triage templates:
