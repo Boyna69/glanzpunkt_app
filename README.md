@@ -232,6 +232,9 @@ samples, guidance on mobile development, and a full API reference.
   `scripts/package_internal_release_bundle.sh`
 - Store dry-run bundle packager (AAB/APK + hashes + evidence template):
   `scripts/prepare_store_dry_run_bundle.sh`
+- Store screenshot pack helpers:
+  `scripts/init_store_screenshot_pack.sh`
+  `scripts/validate_store_screenshot_pack.sh`
 - Supabase operational SQL helpers:
   - `supabase/performance_indexes.sql`
   - `supabase/monitoring_queries.sql`

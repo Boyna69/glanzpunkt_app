@@ -57,3 +57,17 @@ adb exec-out screencap -p > 01_login_guest_android.png
 - `05_wallet_history.png`
 - `06_operator_dashboard.png`
 
+## 6) Optional: Screenshot-Pack automatisiert vorbereiten
+
+Initiales Pack mit Pflicht-Dateinamen erzeugen:
+
+```bash
+/Users/fynn-olegottsch/glanzpunkt_app/scripts/init_store_screenshot_pack.sh
+```
+
+Pack validieren (zeigt fehlende Dateien):
+
+```bash
+/Users/fynn-olegottsch/glanzpunkt_app/scripts/validate_store_screenshot_pack.sh \
+  /Users/fynn-olegottsch/glanzpunkt_app/build/store_assets/<PACK_TAG>
+```
