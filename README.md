@@ -49,6 +49,8 @@ samples, guidance on mobile development, and a full API reference.
   `docs/security_rotation_runbook_de.md`
 - Store metadata handover (DE):
   `docs/store_metadata_handover_de.md`
+- PR review + merge quicksteps (DE):
+  `docs/pr_review_merge_quicksteps_de.md`
 - Backend mode switch via Dart define:
   - Mock (default): `flutter run`
   - Remote API: `flutter run --dart-define=USE_MOCK_BACKEND=false --dart-define=BACKEND_BASE_URL_DEV=https://ucnvzrpcjkpaltuylvbv.supabase.co`
